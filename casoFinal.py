@@ -671,8 +671,8 @@ if status == pywraplp.Solver.OPTIMAL:
     # Extraer las posiciones de los nodos (routers, terminales y concentradores)
     posiciones = {nodo[0]: [nodo[1], nodo[2]] for nodo in (routers + 
                                                            terminales + 
-                                                           concentradores)}
-    
+                                                         concentradores)}
+        
     # Crear el gráfico con las mismas dimensiones y dpi que los anteriores
     plt.figure(5)
     plt.figure(figsize=(10, 8),dpi=150)
@@ -733,144 +733,84 @@ if status == pywraplp.Solver.OPTIMAL:
     plt.show()
     
     #%% Dibujamos los nodos con networkx y matplotlib 
-    '''
+    
     # Crear un grafo
     G = nx.Graph()
     
     # Agregar nodos al grafo con atributos
-    for nodo, pos in posiciones.items():
-        if nodo.startswith('T'):
-            G.add_node(nodo, pos=pos, node_type='terminal', color='red')
-        elif nodo.startswith('R'):
-            G.add_node(nodo, pos=pos, node_type='router', color='purple')
-        elif nodo.startswith('C'):
-            G.add_node(nodo, pos=pos, node_type='concentrador', color='blue')
-    
-    # Agregar conexiones al grafo
-    for conexion, valor in conexiones_term_routersWPAN.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            terminal, router = resto.split('->')
-            G.add_edge(terminal, router, connection_type='term_router_W')
-            
-    
-    # Dibujar el grafo
-    plt.figure(7)
-    plt.figure(figsize=(10, 8),dpi=150)
-    plt.xlim(-110, 110)
-    plt.ylim(-110, 110)
-    
-    # Dibujar nodos
-    node_color = [G.nodes[n]['color'] for n in G.nodes()]
-    node_types = nx.get_node_attributes(G, 'node_type')
-    
-    for nt in set(node_types.values()):
-        nodes = [n for n, t in node_types.items() if t == nt]
-        nx.draw_networkx_nodes(G, posiciones, nodelist=nodes, node_color=node_color, node_shape='o' if nt == 'concentrador' else 's' if nt == 'routerWPAN' or nt == 'routerGPRS' else '*')
-    
-    # Dibujar conexiones
-    nx.draw_networkx_edges(G, posiciones, edge_color='gray')
-    
-    # Añadir leyenda
-    legend_labels = {'terminal': 'Terminal', 'routerWPAN': 'Router WPAN', 'routerGPRS': 'Router GPRS', 'concentrador': 'Concentrador'}
-    legend_handles = [plt.Line2D([0], [0], marker='o' if nt == 'concentrador' else 's' if nt == 'routerWPAN' or nt == 'routerGPRS' else '*', color='w', markerfacecolor=c, label=l) for nt, c, l in zip(set(node_types.values()), node_color, legend_labels.values())]
-    plt.legend(handles=legend_handles, loc='best')
-    
-    plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
-    plt.title('Grafo de conexiones de red')
-    plt.xlabel('Coordenada X')
-    plt.ylabel('Coordenada Y')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-    '''
-    
-    '''
-    # Crear un grafo
-    G = nx.Graph()
-    
-    # Agregar nodos al grafo con atributos
-    for nodo, pos in posiciones.items():
-        if nodo.startswith('T'):
-            G.add_node(nodo, pos=pos, node_type='terminal', color='red')
-        elif nodo.startswith('R'):
-            G.add_node(nodo, pos=pos, node_type='routerWPAN', color='purple')
-        elif nodo.startswith('C'):
-            G.add_node(nodo, pos=pos, node_type='concentrador', color='blue')
-    
-    # Agregar conexiones al grafo
-    for conexion, valor in conexiones_term_routersWPAN.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            terminal, router = resto.split('->')
-            G.add_edge(terminal, router, connection_type='term_router_W')
-            
-    # Dibujar las conexiones entre routers y concentradores
-    for conexion, valor in conexiones_routers_concentradores.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            router, concentrador = resto.split('->')
-            G.add_edge(router, concentrador, connection_type='router_concentrador')
-            
-    
-    # Dibujar el grafo
-    plt.figure(figsize=(50, 50),dpi=150)
-    plt.xlim(-110, 110)
-    plt.ylim(-110, 110)
-    
-    # Dibujar nodos
-    node_color = [G.nodes[n]['color'] for n in G.nodes()]
-    node_types = nx.get_node_attributes(G, 'node_type')
-    
-    for nt in set(node_types.values()):
-        nodes = [n for n, t in node_types.items() if t == nt]
-        nx.draw_networkx_nodes(G, posiciones, nodelist=nodes, node_color=node_color, node_shape='o' if nt == 'concentrador' else 's' if nt == 'router' else '*')
-    
-    # Dibujar conexiones
-    nx.draw_networkx_edges(G, posiciones, edge_color='gray')
-    
-    # Añadir leyenda
-    legend_labels = {'terminal': 'Terminal', 'routerWPAN': 'Router WPAN', 'routerGPRS': 'Router GPRS', 'concentrador': 'Concentrador'}
-    legend_handles = [plt.Line2D([0], [0], marker='o' if nt == 'concentrador' else 's' if nt == 'routerWPAN' or nt == 'routerGPRS' else '*', color='w', markerfacecolor=c, label=l) for nt, c, l in zip(set(node_types.values()), node_color, legend_labels.values())]
-    plt.legend(handles=legend_handles, loc='best')
-    
-    plt.title('Grafo de conexiones de red')
-    plt.tight_layout()
-    plt.show()
-    '''
-    # Crear un grafo
-    G = nx.Graph()
-    
-    # Agregar nodos al grafo con atributos
+    print(posiciones)
     for nodo in posiciones.keys():
         if nodo.startswith('T'):
             G.add_node(nodo, node_type='terminal', color='red')
         elif nodo.startswith('R'):
             G.add_node(nodo, node_type='router', color='purple')
+        elif nodo.startswith('C'):
+            G.add_node(nodo, node_type='concentrador', color='green')
+            
     
+    print("\nCreando grafos:")
     # Agregar conexiones al grafo
     for conexion, valor in conexiones_term_routersWPAN.items():
+        print(conexion + " = " + str(valor))
         if valor == 1.0:
             tipo, resto = conexion.split('_')
             terminal, router = resto.split('->')
             G.add_edge(terminal, router, connection_type='term_router_W')
             
-    # Filtrar las aristas que conectan terminales con routers
-    term_router_edges = [(u, v) for u, v, d in G.edges(data=True) if d['connection_type'] == 'term_router_W']
+    # Agregar conexiones al grafo
+    for conexion, valor in conexiones_term_routersGPRS.items():
+        print(conexion + " = " + str(valor))
+        if valor == 1.0:
+            tipo, resto = conexion.split('_')
+            terminal, router = resto.split('->')
+            G.add_edge(terminal, router, connection_type='term_router_G')
+            
+    # Agregar conexiones al grafo
+    for conexion, valor in conexiones_routersWPAN_to_concentradores.items():        
+        print(conexion + " = " + str(valor))
+        if valor == 1.0:
+            tipo, resto = conexion.split('_')
+            router, concentrador = resto.split('->')
+            G.add_edge(router, concentrador, connection_type='router_W_concentrador')
+       
+        
+    # Filtrar los nodos que tienen posición definida
+    nodes_with_positions = [n for n in G.nodes() if n in posiciones]
+    
     
     # Dibujar el grafo
-    plt.figure(figsize=(8, 6))
+    plt.figure(6)
+    plt.figure(figsize=(10, 8),dpi=150)
+    plt.xlim(-110, 110)
+    plt.ylim(-110, 110)
+
     
     # Dibujar los nodos
     node_types = nx.get_node_attributes(G, 'node_type')
-    colors = ['red' if node_types[n] == 'terminal' else 'purple' for n in G.nodes()]
-    nx.draw_networkx_nodes(G, posiciones, node_color=colors, node_size=300)
+    colors = []
+    for nodo in G.nodes():
+        if node_types[nodo] == 'terminal':
+            colors.append('salmon')
+        elif node_types[nodo] == 'router':
+            colors.append('plum')
+        elif node_types[nodo] == 'concentrador':
+            colors.append('skyblue')
+            
+    nx.draw_networkx_nodes(G, posiciones, node_color=colors, node_size=300, nodelist=G.nodes())
     
-    # Dibujar las aristas entre terminales y routers
-    nx.draw_networkx_edges(G, posiciones, edgelist=term_router_edges, edge_color='gray')
+    # Dibujar el grafo con los nodos que tienen posición definida
+    nx.draw(G, posiciones, nodelist=nodes_with_positions, node_color=colors, with_labels=True)
+
     
+    plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
     plt.title('Conexiones entre terminales y routers')
+    plt.xlabel('Coordenada X')
+    plt.ylabel('Coordenada Y')
+    plt.grid(True)
+    plt.tight_layout()
     plt.show()
+    
+    
 else:
     print("El estado de la solución no es óptimo, es = " + str(status))
 
