@@ -194,6 +194,178 @@ def imprimir_tabla_cortada(datos,letra):
     headers = [l+"[t][0]", l+"[t][1]", l+"[t][2]", l+"[t][.]"]
     print(tabulate(datos_procesados, headers=headers, tablefmt="grid"))
     print("\n")
+
+
+           
+ 
+def dibujar_nodos_con_texto(posiciones):
+    """
+    Dibuja los nodos en un gráfico con texto asociado a cada nodo.
+
+    Parámetros:
+        - posiciones (dict): Diccionario con las posiciones de los nodos activos
+
+    Dibuja los nodos en un gráfico, asignando distintos marcadores y colores según su tipo:
+        - Terminales (T): marcador '*', color rojo, tamaño 50.
+        - Routers (R):
+            - Routers WPAN: marcador 's', color morado, tamaño 200.
+            - Routers GPRS: marcador 's', color verde, tamaño 200.
+        - Concentradores (C): marcador 'o', color azul, tamaño 400.
+    Agrega texto a cada nodo para identificarlo en el gráfico.
+    """
+    for nodo, (x, y) in posiciones.items():
+        if nodo.startswith('T'):
+            plt.scatter(x, y, marker='*', color='salmon', s=50, label=nodo)
+            plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
+        elif nodo.startswith('R'):
+            if nodo.endswith('W'):
+                plt.scatter(x, y, marker='s', color='plum', s=200, label=nodo)
+                plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
+            elif nodo.endswith('G'):
+                plt.scatter(x, y, marker='s', color='LightGreen', s=200, label=nodo)
+                plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
+        elif nodo.startswith('C'):
+            plt.scatter(x, y, marker='o', color='skyblue', s=400, label=nodo) 
+            plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
+        
+ 
+    
+def dibujar_conexiones(conexiones, posiciones, color, estilo):
+    """
+    Dibuja las conexiones entre dispositivos en un gráfico.
+
+    Parámetros:
+        - conexiones (dict): Diccionario que contiene las conexiones y sus valores.
+        - posiciones (dict): Diccionario con las posiciones de los dispositivos.
+        - color (str): Color de las flechas que representan las conexiones.
+        - estilo (str): Estilo de línea de las flechas (p. ej., 'solid', 'dashed', 'dotted').
+    
+    Devuelve:
+        -nada
+
+    Las conexiones se representan con flechas que unen los dispositivos en el gráfico. 
+    Los dispositivos pueden ser terminales, routers o concentradores. El nombre del 
+    dispositivo puede variar dependiendo del tipo (WPAN/GPRS), y se adapta 
+    automáticamente para su representación visual.
+
+    Ejemplo de uso:
+    dibujar_conexiones(conexiones_term_routersWPAN_Solucion, posiciones, 'green', 'dashed')
+    """
+    for conexion, valor in conexiones.items():
+        if valor == 1.0:
+            tipo, resto = conexion.split('_')
+            dispositivo1, dispositivo2 = resto.split('->')
+            
+            # Modificar el nombre del dispositivo 2 según el tipo (WPAN/GPRS)
+            if tipo == 'W':
+                dispositivo2 = dispositivo2 + 'W'                
+            elif tipo == 'V':
+                dispositivo2 = dispositivo2 + 'G'                  
+            elif tipo == 'U':
+                dispositivo1 = dispositivo1 + 'W'
+            elif tipo == 'R':
+                dispositivo1 = dispositivo1 + 'W'  
+                dispositivo2 = dispositivo2 + 'W'                  
+            elif tipo == 'S':
+                dispositivo1 = dispositivo1 + 'W'
+                dispositivo2 = dispositivo2 + 'G'
+            
+            
+            x1, y1 = posiciones[dispositivo1][0], posiciones[dispositivo1][1]
+            x2, y2 = posiciones[dispositivo2][0], posiciones[dispositivo2][1]
+            
+            plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
+                            arrowstyle='->', color=color, linestyle=estilo))
+            
+def configurar_grafico(titulo="",tight_layout = 1):
+    """
+    Configura el gráfico con los parámetros especificados.
+    
+    Parámetros:
+        - titulo (string): Contiene el título del gráfico.
+        - tight_layout (int): 1 ó 0. Evita el mensaje de error en nxgraph
+    """
+    plt.gca().set_aspect('equal', adjustable='box')  # Eje x e y proporcionales
+    plt.title(titulo)
+    plt.xlabel('Coordenada X')
+    plt.ylabel('Coordenada Y')
+    plt.xlim(-110, 110)
+    plt.ylim(-110, 110)
+    plt.grid(True)
+    if tight_layout:
+        plt.tight_layout()
+        
+def crea_grafico(figure):
+    """
+    Crea un gráfico dado un número de figura. Se usa para que todos sean iguales
+    """
+    plt.figure(figure)
+    plt.figure(figsize=(10, 8),dpi=150)
+    
+
+def agrupar_conexiones(conexiones):
+    """
+    Agrupa las conexiones en un diccionario. Agrupando todas las conexiones
+    que recibe un dispositivo en cada entrada.
+
+    Parametros:
+        - conexiones (list): Lista de conexiones a agrupar.
+
+    Devuelve:
+        - dict: Diccionario que contiene las conexiones agrupadas.
+    """
+    conexiones_agrupadas = {}
+
+    for lista_conexiones in conexiones:
+        for conexionCandidata in lista_conexiones:
+            for nodo, valorConexion in conexionCandidata.items():
+                if nodo in conexiones_agrupadas:
+                    conexiones_agrupadas[nodo].append(valorConexion)
+                else:
+                    conexiones_agrupadas[nodo] = []
+                    conexiones_agrupadas[nodo].append(valorConexion)
+
+    return conexiones_agrupadas
+    
+
+def obtener_nodos_activos(dispositivosNombres, d_DISPOSITIVOS):
+    """
+    Obtiene los dispositivos activos a partir de sus nombres y soluciones.
+    
+    Parametros:
+        - dispositivosNombres (list): Lista de nombres de dispositivos.
+        - d_DISPOSITIVOS (dict): Diccionario de objetos de dispositivos.
+    
+    Devuelve:
+        - list: Lista de nombres de dispositivos activos.
+    """
+    dispositivosSolucion = []
+    
+    for dispositivo in dispositivosNombres:
+        d = d_DISPOSITIVOS[dispositivo]
+        if d.solution_value() > 0:
+            dispositivosSolucion.append(d.name())
+    
+    return dispositivosSolucion
+
+def obtener_conexiones_activas(lista_conexiones):
+    """
+    Obtiene las conexiones activas a partir de una lista de conexiones.
+
+    Parámetros:
+        - conexiones (list): Lista de conexiones a evaluar.
+
+    Returns:
+        - dict: Diccionario de conexiones activas con sus valores de solución.
+    """
+    conexiones_activas = {}
+    for conexion in lista_conexiones:
+        for conn in conexion:
+            c = list(conn.values())[0]
+            if c.solution_value() > 0:
+                conexiones_activas[c.name()] = c.solution_value()
+
+    return conexiones_activas
    
     
 
@@ -250,16 +422,14 @@ for terminal in terminales:
 #%% Obtenemos todas las conexiones candidatas entre dispositivos
 conn_c_term_rout = dispositivos_en_rango_lista(terminales, routers)
 conn_c_rout_rout = dispositivos_en_rango_lista(routers, routers, distMaxRout)
-conn_c_rout_conc = dispositivos_en_rango_lista(routers, concentradores, distMaxConc)
+conn_c_rout_conc = dispositivos_en_rango_lista(routers, concentradores, 
+                                                               distMaxConc)
 
 
 
 #%% Imprimimos un plano con todos los dispositivos, para hacernos una 
 #   idea previa de la configuración del escenario.
-plt.figure(1)
-plt.figure(figsize=(10, 8),dpi=150)
-plt.xlim(-110, 110)
-plt.ylim(-110, 110)
+crea_grafico(1)
 
 
 # Pintamos en la gráfica los 3 tipos de terminales
@@ -276,12 +446,8 @@ plt.legend(handles=[concentrador_patch, router_patch, terminal_patch])
 
 
 # Configuraciones del gráfico
-plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
-plt.title('Terminales y ubicaciones candidatas de routers y concentradores')
-plt.xlabel('Coordenada X')
-plt.ylabel('Coordenada Y')
-plt.grid(True)
-plt.tight_layout()
+configurar_grafico("Terminales y ubicaciones candidatas de routers " +
+                   "y concentradores")
 
 
 
@@ -299,10 +465,8 @@ distanciaMaxEjemplo = terminalEjemplo[3]
 nombreTerminalEjemplo = str(terminalEjemplo[0])
 routersCompatiblesEjemplo = conn_c_term_rout[indiceEjemplo]["Vecinos"]
 
-plt.figure(2)
-plt.figure(figsize=(10, 8),dpi=150)
-plt.xlim(-110, 110)
-plt.ylim(-110, 110)
+crea_grafico(2)
+
 
 # Pintamos gráfica con dispositivos
 pintar_plano(routersCompatiblesEjemplo, 'blue', 'Routers',marcador='o')
@@ -315,12 +479,8 @@ terminal_evaluado_patch = mpatches.Patch(color='red', label='Terminal')
 plt.legend(handles=[routers_candidatos_patch, terminal_evaluado_patch])
 
 # Configuraciones del gráfico
-plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
-plt.title('Ubicaciones routers candidatas para conectarse con '+ nombreTerminalEjemplo)
-plt.xlabel('Coordenada X')
-plt.ylabel('Coordenada Y')
-plt.grid(True)
-plt.tight_layout()
+configurar_grafico("Ubicaciones routers candidatas para conectarse con " + 
+                   str(nombreTerminalEjemplo))
 
 
 #%% Pintamos routers en rango de un router de ejemplo para ver candidatos
@@ -330,10 +490,7 @@ routerEjemplo = conn_c_rout_rout[indiceEjemplo]["Referencia"]
 nombreRouterEjemplo = str(routerEjemplo[0])
 routersCompatiblesEjemplo = conn_c_rout_rout[indiceEjemplo]["Vecinos"]
 
-plt.figure(3)
-plt.figure(figsize=(10, 8),dpi=150)
-plt.xlim(-110, 110)
-plt.ylim(-110, 110)
+crea_grafico(3)
 
 
 # Pintamos gráfica con dispositivos
@@ -347,12 +504,8 @@ terminal_evaluado_patch = mpatches.Patch(color='red', label='Router referencia')
 plt.legend(handles=[routers_candidatos_patch, terminal_evaluado_patch])
 
 # Configuraciones del gráfico
-plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
-plt.title('Ubicaciones routers candidatas para conectarse con router '+ nombreRouterEjemplo)
-plt.xlabel('Coordenada X')
-plt.ylabel('Coordenada Y')
-plt.grid(True)
-plt.tight_layout()
+configurar_grafico("Ubicaciones routers candidatas para conectarse con " +
+                   "router " + str(nombreRouterEjemplo))
 
 
 
@@ -363,11 +516,8 @@ routerEjemplo = conn_c_rout_conc[indiceEjemplo]["Referencia"]
 nombreRouterEjemplo = str(routerEjemplo[0])
 concentradoresCompatiblesEjemplo = conn_c_rout_conc[indiceEjemplo]["Vecinos"]
 
-plt.figure(4)
-plt.figure(figsize=(10, 8),dpi=150)
-plt.xlim(-110, 110)
-plt.ylim(-110, 110)
 
+crea_grafico(4)
 
 # Pintamos gráfica con dispositivos
 pintar_plano(concentradoresCompatiblesEjemplo, 'green', 'Routers',marcador='s')
@@ -375,17 +525,19 @@ pintar_plano(concentradoresCompatiblesEjemplo, 'green', 'Routers',marcador='s')
 pintar_nodo_rango(routerEjemplo, distMaxConc)
 
 #Creamos leyenda
-routers_candidatos_patch = mpatches.Patch(color='green', label='Concentradores (Candidatos)')
-terminal_evaluado_patch = mpatches.Patch(color='red', label='Router referencia')
+routers_candidatos_patch = mpatches.Patch(color='green', 
+                                          label='Concentradores (Candidatos)')
+
+terminal_evaluado_patch = mpatches.Patch(color='red', 
+                                          label='Router referencia')
+
 plt.legend(handles=[routers_candidatos_patch, terminal_evaluado_patch])
 
+
+
 # Configuraciones del gráfico
-plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
-plt.title('Ubicaciones concentradores candidatas para conectarse con router '+ nombreRouterEjemplo)
-plt.xlabel('Coordenada X')
-plt.ylabel('Coordenada Y')
-plt.grid(True)
-plt.tight_layout()
+configurar_grafico("Ubicaciones concentradores candidatas para conectarse con " +
+                   "router " + str(nombreRouterEjemplo))
 
 
 #%% Definimos el modelo
@@ -527,121 +679,21 @@ print(str(len(c_CONCENTRADORES)) + " posiciones candidatas para concentradores")
 
 #%% Creamos algunas listas y diccionarios que nos serán útiles después para
 #   crear variables y restricciones
-'''Todo esto se podría convertir en una función'''
 
+conexiones_terminales_to_routerWPAN = agrupar_conexiones(
+                                        w_conexionesTerminalesRouterWPAN)
 
-# Agrupamos las conexiones que llegan a cada router WPAN en un diccionario
-conexiones_terminales_to_routerWPAN = {}
+conexiones_terminales_to_routerGPRS = agrupar_conexiones(
+                                        v_conexionesTerminalesRouterGPRS)
 
-for terminal in w_conexionesTerminalesRouterWPAN:
-    
-    # Recorremos todas las conexiones posibles de cada terminal con todos
-    # sus routers vecinos
-    for conexionCandidata in terminal:
-        
-        # Para cada conexion, comprobamos con que router es, y la agregamos
-        # al valor de suma_por_router_WPAN que corresponda a cada router
-        for router, valorConexion in conexionCandidata.items():
-            
-            # Si ya existe el router en el diccionario de sumas, sumamos
-            # la variable conexion. Si no existe, la creamos
-            if router in conexiones_terminales_to_routerWPAN:
-                conexiones_terminales_to_routerWPAN[router].append(valorConexion)
-            else:
-                conexiones_terminales_to_routerWPAN[router] = []
-                conexiones_terminales_to_routerWPAN[router].append(valorConexion)
-                
+conexiones_routersWPAN_to_concentradores = agrupar_conexiones(
+                                        u_conexionesRoutersWPANConcentradores)
 
+conexiones_routersWPAN_to_routersWPAN = agrupar_conexiones(
+                                        r_conexionesRoutersWPANroutersWPAN)
 
-
-# Agrupamos las conexiones que llegan a cada router GPRS en un diccionario
-conexiones_terminales_to_routerGPRS = {}
-
-for terminal in v_conexionesTerminalesRouterGPRS:
-    
-    # Recorremos todas las conexiones posibles de cada terminal con todos
-    # sus routers vecinos
-    for conexionCandidata in terminal:
-        
-        # Para cada conexion, comprobamos con que router es, y la agregamos
-        # al valor de suma_por_router_WPAN que corresponda a cada router
-        for router, valorConexion in conexionCandidata.items():
-            
-            # Si ya existe el router en el diccionario de sumas, sumamos
-            # la variable conexion. Si no existe, la creamos
-            if router in conexiones_terminales_to_routerGPRS:
-                conexiones_terminales_to_routerGPRS[router].append(valorConexion)
-            else:
-                conexiones_terminales_to_routerGPRS[router] = []
-                conexiones_terminales_to_routerGPRS[router].append(valorConexion)
-
-
-
-# Agrupamos las conexiones que llegan a cada router Concentrador en un diccionario
-conexiones_routersWPAN_to_concentradores = {}
-
-for router in u_conexionesRoutersWPANConcentradores:
-    
-    # Recorremos todas las conexiones posibles de cada terminal con todos
-    # sus routers vecinos
-    for conexionCandidata in router:
-        
-        # Para cada conexion, comprobamos con que router es, y la agregamos
-        # al valor de suma_por_router_WPAN que corresponda a cada router
-        for concentrador, valorConexion in conexionCandidata.items():
-            
-            # Si ya existe el router en el diccionario de sumas, sumamos
-            # la variable conexion. Si no existe, la creamos
-            if concentrador in conexiones_routersWPAN_to_concentradores:
-                conexiones_routersWPAN_to_concentradores[concentrador].append(valorConexion)
-            else:
-                conexiones_routersWPAN_to_concentradores[concentrador] = []
-                conexiones_routersWPAN_to_concentradores[concentrador].append(valorConexion)
-                
-
-                
-# Agrupamos las conexiones que llegan a cada router Concentrador en un diccionario
-conexiones_routersWPAN_to_routersWPAN = {}
-
-for router in r_conexionesRoutersWPANroutersWPAN:
-    
-    # Recorremos todas las conexiones posibles de cada terminal con todos
-    # sus routers vecinos
-    for conexionCandidata in router:
-        
-        # Para cada conexion, comprobamos con que router es, y la agregamos
-        # al valor de suma_por_router_WPAN que corresponda a cada router
-        for routerReceptor, valorConexion in conexionCandidata.items():
-            
-            # Si ya existe el router en el diccionario de sumas, sumamos
-            # la variable conexion. Si no existe, la creamos
-            if routerReceptor in conexiones_routersWPAN_to_routersWPAN:
-                conexiones_routersWPAN_to_routersWPAN[routerReceptor].append(valorConexion)
-            else:
-                conexiones_routersWPAN_to_routersWPAN[routerReceptor] = []
-                conexiones_routersWPAN_to_routersWPAN[routerReceptor].append(valorConexion)
-                
-# Agrupamos las conexiones que llegan a cada router Concentrador en un diccionario
-conexiones_routersWPAN_to_routersGPRS = {}
-
-for router in s_conexionesRoutersWPANroutersGPRS:
-    
-    # Recorremos todas las conexiones posibles de cada terminal con todos
-    # sus routers vecinos
-    for conexionCandidata in router:
-        
-        # Para cada conexion, comprobamos con que router es, y la agregamos
-        # al valor de suma_por_router_WPAN que corresponda a cada router
-        for routerGPRS, valorConexion in conexionCandidata.items():
-            
-            # Si ya existe el router en el diccionario de sumas, sumamos
-            # la variable conexion. Si no existe, la creamos
-            if routerGPRS in conexiones_routersWPAN_to_routersGPRS:
-                conexiones_routersWPAN_to_routersGPRS[routerGPRS].append(valorConexion)
-            else:
-                conexiones_routersWPAN_to_routersGPRS[routerGPRS] = []
-                conexiones_routersWPAN_to_routersGPRS[routerGPRS].append(valorConexion)
-
+conexiones_routersWPAN_to_routersGPRS = agrupar_conexiones(
+                                        s_conexionesRoutersWPANroutersGPRS)
 
 #%% Definimos las restricciones
 '''
@@ -762,7 +814,7 @@ for routerWPAN, routerWPAN2, routerGPRS, nombreR in zip(
         suma_conex_RWPAN_Concentrador += list(conexionCandidata.values())[0]
     
     
-    '''
+    ''' DESACTIVAMOS CONEXIONES ENTRE ROUTERS WPAN
     for conexionCandidata in routerWPAN2:
         # No agregamos la conexión consigo mismo
         resto, rout = str(list(conexionCandidata.values())[0]).split('->')
@@ -804,79 +856,33 @@ if status == pywraplp.Solver.OPTIMAL:
     print("\nSe ha encontrado la solución óptima")
     objective = solver.Objective()
     
-    print("-------------------------------------")
-    print("\nDISPOSITIVOS:\n")
-    print("\nRouters WPAN/Wifi activos:")
-    routersWPANSolucion = []
-    for router in routersNombres:
-        r = r_WPAN[router]
-        if r.solution_value() > 0:
-            print(r.name() + " = " + str(r.solution_value()))
-            routersWPANSolucion.append(r.name())
-            
+    routersWPANSolucion = obtener_nodos_activos(routersNombres, r_WPAN)
+    routersGPRSSolucion = obtener_nodos_activos(routersNombres, r_GPRS)
+    concentradoresSolucion = obtener_nodos_activos(concentradorNombres, 
+                                                           c_CONCENTRADORES)
     
-    print("\nRouters GPRS activos:")
-    routersGPRSSolucion = []
-    for router in routersNombres:
-        r = r_GPRS[router]
-        if r.solution_value() > 0:
-            print(r.name() + " = " + str(r.solution_value()))
-            routersGPRSSolucion.append(r.name())
-     
-        
-    print("\nConcentradores activos:")
-    concentradoresSolucion = []
-    for concentrador in concentradorNombres:
-        c= c_CONCENTRADORES[concentrador]
-        if c.solution_value() > 0:
-            print(c.name() + " = " + str(c.solution_value()))
-            concentradoresSolucion.append(c.name())
-            
-    print("\nCONEXIONES:\n")
+    print("-------------------------------------")
+
+
     print("Conexiones terminales-WPAN:")
-    conexiones_term_routersWPAN_Solucion = {}
-    for conexionTerminalRouter in w_conexionesTerminalesRouterWPAN:
-        for conn in conexionTerminalRouter:
-            c = list(conn.values())[0]
-            if c.solution_value() > 0:
-                print(c.name() + " = " + str(c.solution_value()))
-                conexiones_term_routersWPAN_Solucion[c.name()] = c.solution_value()
+    conexiones_term_routersWPAN_Solucion = obtener_conexiones_activas(
+                                            w_conexionesTerminalesRouterWPAN)
                 
     print("\nConexiones terminales-GPRS:")
-    conexiones_term_routersGPRS_Solucion = {}
-    for conexionTerminalRouter in v_conexionesTerminalesRouterGPRS:
-        for conn in conexionTerminalRouter:
-            c = list(conn.values())[0]
-            if c.solution_value() > 0:
-                print(c.name() + " = " + str(c.solution_value()))
-                conexiones_term_routersGPRS_Solucion[c.name()] = c.solution_value()
-                
-    print("\nConexiones WPAN-Concentradores")
-    conexiones_routers_concentradores_Solucion = {}
-    for conexionRouterConcentrador in u_conexionesRoutersWPANConcentradores:
-        for conn in conexionRouterConcentrador:
-            c = list(conn.values())[0]
-            if c.solution_value() > 0:
-                print(c.name() + " = " + str(c.solution_value()))
-                conexiones_routers_concentradores_Solucion[c.name()] = c.solution_value()
-                
+    conexiones_term_routersGPRS_Solucion = obtener_conexiones_activas(
+                                            v_conexionesTerminalesRouterGPRS)
+
+    conexiones_routers_concentradores_Solucion = obtener_conexiones_activas(
+                                        u_conexionesRoutersWPANConcentradores)
+
     print("\nConexiones WPAN-WPAN")
-    conexiones_routersWPAN_routersWPAN_Solucion = {}
-    for conexionRouterWPANrouterWPAN in r_conexionesRoutersWPANroutersWPAN:
-        for conn in conexionRouterWPANrouterWPAN:
-            c = list(conn.values())[0]
-            if c.solution_value() > 0:
-                print(c.name() + " = " + str(c.solution_value()))
-                conexiones_routersWPAN_routersWPAN_Solucion[c.name()] = c.solution_value()
+    conexiones_routersWPAN_routersWPAN_Solucion = obtener_conexiones_activas(
+                                        r_conexionesRoutersWPANroutersWPAN)
+
                 
     print("\nConexiones WPAN-GPRS")
-    conexiones_routersWPAN_routersGPRS_Solucion = {}
-    for conexionRouterWPANrouterGPRS in s_conexionesRoutersWPANroutersGPRS:
-        for conn in conexionRouterWPANrouterGPRS:
-            c = list(conn.values())[0]
-            if c.solution_value() > 0:
-                print(c.name() + " = " + str(c.solution_value()))
-                conexiones_routersWPAN_routersGPRS_Solucion[c.name()] = c.solution_value()
+    conexiones_routersWPAN_routersGPRS_Solucion = obtener_conexiones_activas(
+                                            s_conexionesRoutersWPANroutersGPRS)
     
     print("\nConexiones totales: ")
     print("terminales-WPAN = "+str(len(conexiones_term_routersWPAN_Solucion)))
@@ -933,100 +939,41 @@ if status == pywraplp.Solver.OPTIMAL:
         
         
     # Crear el gráfico con las mismas dimensiones y dpi que los anteriores
-    plt.figure(5)
-    plt.figure(figsize=(10, 8),dpi=150)
+    crea_grafico(5)
 
     
     
-    # Dibujar los nodos
-    for nodo, (x, y) in posiciones.items():
-        if nodo.startswith('T'):
-            plt.scatter(x, y, marker='*', color='red', label=nodo)
-        elif nodo.startswith('R'):
-            plt.scatter(x, y, marker='s', color='purple', label=nodo)
-            ''' CREAR DISTINCION POR TIPO DE ROUTER
-            elif nodo.startswith('R') and nodo in routersWPAN:
-                plt.scatter(x, y, marker='s', color='purple', s=200, label=nodo)
-            elif nodo.startswith('R') and nodo in routersGPRS:
-                plt.scatter(x, y, marker='s', color='green', s=200, label=nodo)
-            '''
-        elif nodo.startswith('C'):
-            plt.scatter(x, y, marker='o', color='blue', label=nodo) 
-        
+    # Dibujar los nodos y las conexiones
+    dibujar_nodos_con_texto(posiciones)
     
-    # Dibujar las conexiones entre terminales y routers WPAN
-    for conexion, valor in conexiones_term_routersWPAN_Solucion.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            terminal, router = resto.split('->')
-            router = router + "W"
-            x1, y1 = posiciones[terminal][0], posiciones[terminal][1]
-            x2, y2 = posiciones[router][0], posiciones[router][1]
-            plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
-                            arrowstyle='->', color='green', linestyle='dashed'))
-            
-    # Dibujar las conexiones entre terminales y routers GPRS
-    for conexion, valor in conexiones_term_routersGPRS_Solucion.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            terminal, router = resto.split('->')
-            router = router + "G"
-            x1, y1 = posiciones[terminal][0], posiciones[terminal][1]
-            x2, y2 = posiciones[router][0], posiciones[router][1]
-            plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
-                            arrowstyle='->', color='green', linestyle='dashed'))
-            
-    # Dibujar las conexiones entre routers y concentradores
-    for conexion, valor in conexiones_routers_concentradores_Solucion.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            router, concentrador = resto.split('->')
-            router = router + "W"
-            x1, y1 = posiciones[router][0], posiciones[router][1]
-            x2, y2 = posiciones[concentrador][0], posiciones[concentrador][1]
-            plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
-                arrowstyle='->', color='blue', linestyle='dashed'))
-            
-    # Dibujar las conexiones entre routersWPAN y routersWPAN
-    for conexion, valor in conexiones_routersWPAN_routersWPAN_Solucion.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            router, router2 = resto.split('->')
-            router = router + "W"
-            router2 = router2 + "W"
-            x1, y1 = posiciones[router][0], posiciones[router][1]
-            x2, y2 = posiciones[router2][0], posiciones[router2][1]
-            plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
-                arrowstyle='->', color='blue', linestyle='dashed'))
-            
-    # Dibujar las conexiones entre routersWPAN y routersGPRS
-    for conexion, valor in conexiones_routersWPAN_routersGPRS_Solucion.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            router, router2 = resto.split('->')
-            router = router + "W"
-            router2 = router2 + "G"
-            x1, y1 = posiciones[router][0], posiciones[router][1]
-            x2, y2 = posiciones[router2][0], posiciones[router2][1]
-            plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
-                arrowstyle='->', color='blue', linestyle='dashed'))
+    dibujar_conexiones(conexiones_term_routersWPAN_Solucion, posiciones, 
+                       'red', 'dashed')
+    
+    dibujar_conexiones(conexiones_term_routersGPRS_Solucion, posiciones, 
+                       'green', 'dashed')
+    
+    dibujar_conexiones(conexiones_routers_concentradores_Solucion, posiciones, 
+                       'blue', 'dashed')
+    
+    dibujar_conexiones(conexiones_routersWPAN_routersWPAN_Solucion, posiciones, 
+                       'brown', 'dashed')
+    
+    dibujar_conexiones(conexiones_routersWPAN_routersGPRS_Solucion, posiciones, 
+                       'orange', 'dashed')
+
+    
     
     #Creamos leyenda
-    concentradores_patch = mpatches.Patch(color='blue', label='Concentradores')
-    routers_patch = mpatches.Patch(color='purple', label='Routers')
-    terminal_patch = mpatches.Patch(color='red', label='Routers')
-    plt.legend(handles=[concentradores_patch, routers_patch, terminal_patch])
+    routers_WPAN_patch = mpatches.Patch(color='plum', label='Routers WPAN')
+    routers_GPRS_patch = mpatches.Patch(color='LightGreen', label='Routers GPRS')
+    concentradores_patch = mpatches.Patch(color='skyblue', label='Concentraodres')
+    terminal_patch = mpatches.Patch(color='salmon', label='Terminal')
+    plt.legend(handles=[terminal_patch, routers_WPAN_patch, 
+                        routers_GPRS_patch, concentradores_patch])
     
     
-    # Configuraciones del gráfico
-    plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
-    plt.title('Grafo de conexiones')
-    plt.xlabel('Coordenada X')
-    plt.ylabel('Coordenada Y')
-    plt.xlim(-110, 110)
-    plt.ylim(-110, 110)
-    plt.grid(True)
-    plt.tight_layout()
+    # Configuraciones estandar del gráfico
+    configurar_grafico("Grafo de conexiones 1")
 
 
     
@@ -1045,9 +992,7 @@ if status == pywraplp.Solver.OPTIMAL:
             if nodo.endswith('W'):
                 G.add_node(nodo, node_type='router_W', color='plum')
             elif nodo.endswith('G'):
-                G.add_node(nodo, node_type='router_G', color='green')
-            
-            
+                G.add_node(nodo, node_type='router_G', color='LightGreen')
         elif nodo.startswith('C'):
             G.add_node(nodo, node_type='concentrador', color='skyblue')
             
@@ -1094,8 +1039,7 @@ if status == pywraplp.Solver.OPTIMAL:
  
     
     # Dibujar el grafo
-    plt.figure(6)
-    plt.figure(figsize=(10, 8),dpi=150)
+    crea_grafico(6)
 
     
     # Cambiamos los colores de los nodos
@@ -1146,16 +1090,7 @@ if status == pywraplp.Solver.OPTIMAL:
     
 
     plt.axis('on') # Forzamos que se muestren los ejes para que se vea como el resto
-    plt.tick_params(axis='both', which='both', direction='inout', 
-                    bottom=True, left=True)
-    plt.gca().set_aspect('equal', adjustable='box') # Eje x e y proporcionales
-    plt.title('Conexiones entre terminales y routers')
-    plt.xlabel('Coordenada X')
-    plt.ylabel('Coordenada Y')
-    plt.xlim(-110, 110)
-    plt.ylim(-110, 110)
-    plt.grid(True)    
-    #plt.tight_layout()
+    configurar_grafico("Grafo de conexiones 2",0)
     
     #Creamos leyenda
     routers_WPAN_patch = mpatches.Patch(color='plum', label='Routers WPAN')
