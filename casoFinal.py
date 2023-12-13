@@ -287,7 +287,6 @@ plt.tight_layout()
 
 
 
-'''
 #%% Pintamos gráficos de ejemplo de conexiones candidatas.
     
 
@@ -322,7 +321,7 @@ plt.xlabel('Coordenada X')
 plt.ylabel('Coordenada Y')
 plt.grid(True)
 plt.tight_layout()
-'''
+
 
 #%% Pintamos routers en rango de un router de ejemplo para ver candidatos
 indiceEjemplo = 0
@@ -356,7 +355,7 @@ plt.grid(True)
 plt.tight_layout()
 
 
-'''
+
 #%% Pintamos concentradores en rango de un router de ejemplo
 indiceEjemplo = 10
 
@@ -387,7 +386,7 @@ plt.xlabel('Coordenada X')
 plt.ylabel('Coordenada Y')
 plt.grid(True)
 plt.tight_layout()
-'''
+
 
 #%% Definimos el modelo
 solver = pywraplp.Solver.CreateSolver('SCIP')
@@ -644,20 +643,6 @@ for router in s_conexionesRoutersWPANroutersGPRS:
                 conexiones_routersWPAN_to_routersGPRS[routerGPRS].append(valorConexion)
 
 
-print("CONEXIONES")
-
-print(conexiones_terminales_to_routerWPAN)
-print()
-print(conexiones_routersWPAN_to_routersWPAN)
-print()
-print(conexiones_routersWPAN_to_routersGPRS)
-print()
-print(conexiones_terminales_to_routerGPRS)
-
-
-
-
-
 #%% Definimos las restricciones
 '''
 - R1:   Cada terminal solo puede estar conectado a 1 router (GPRS o WPAN)
@@ -725,28 +710,25 @@ for router in routersNombres:
     for conexion_T_RW in conexiones_terminales_to_routerWPAN[router]:
         #print(r_WPAN[router] +" >= " + str(conexion_T_RW))
         solver.Add(r_WPAN[router] >= conexion_T_RW)
-    print()
+
     
     # -R5': Un router WPAN debe ser >= que las conexiones con otro router WPAN
     for conexion_RW_RW in conexiones_routersWPAN_to_routersWPAN[router]:
         #print(str(r_WPAN[router]) + " >= " + str(conexion_RW_RW) )
         solver.Add(r_WPAN[router] >= conexion_RW_RW)
-    print()
+
     
     # -R6: Un router GPRS debe ser mayor que sus conexiones entrantes    
     for conexion_T_RG in conexiones_terminales_to_routerGPRS[router]:
         #print(r_GPRS[router] +" >= " + str(conexion_T_RG))
         solver.Add(r_GPRS[router] >= conexion_T_RG)
-        
-    print()
+
         
     # -R6': Un router GPRS debe ser mayor que sus conexiones provenientes de
     #       otro router WPAN
     for conexion_RW_RG in conexiones_routersWPAN_to_routersGPRS[router]:
         #print(r_GPRS[router] +" >= " + str(conexion_T_RG))
         solver.Add(r_GPRS[router] >= conexion_RW_RG)
-    print()
-
         
 
 
@@ -764,7 +746,7 @@ for concentrador in concentradorNombres:
 #       - O un router GPRS
 # Para que la conexión exista unicamente cuando exista el router, deberemos
 # igualarlo a su existencia o no (que es solo 1 o 0)
-for routerWPAN, routerWPAN2, routerWPAN3, nombreR in zip(
+for routerWPAN, routerWPAN2, routerGPRS, nombreR in zip(
                                     u_conexionesRoutersWPANConcentradores, 
                                     r_conexionesRoutersWPANroutersWPAN,
                                     s_conexionesRoutersWPANroutersGPRS,
@@ -780,27 +762,23 @@ for routerWPAN, routerWPAN2, routerWPAN3, nombreR in zip(
         suma_conex_RWPAN_Concentrador += list(conexionCandidata.values())[0]
     
     
-    print()
-    
-    
+    '''
     for conexionCandidata in routerWPAN2:
         # No agregamos la conexión consigo mismo
         resto, rout = str(list(conexionCandidata.values())[0]).split('->')
         if str(nombreR) != rout:
-            print(list(conexionCandidata.values()))
+            #print(list(conexionCandidata.values()))
             suma_conex_RWPAN_RWPAN += list(conexionCandidata.values())[0]
+    '''
         
-    print()
-        
-    for conexionCandidata in routerWPAN3:
+       
+    for conexionCandidata in routerGPRS:
         # No agregamos la conexión consigo mismo
         resto, rout = str(list(conexionCandidata.values())[0]).split('->')
         if str(nombreR) != rout:
-            print(list(conexionCandidata.values()))
+            #print(list(conexionCandidata.values()))
             suma_conex_RWPAN_RGPRS += list(conexionCandidata.values())[0]
     
-          
-    print("\n\n")
     
     
     # Lo igualamos al valor de la variable que determina su existencia
@@ -826,7 +804,8 @@ if status == pywraplp.Solver.OPTIMAL:
     print("\nSe ha encontrado la solución óptima")
     objective = solver.Objective()
     
-    
+    print("-------------------------------------")
+    print("\nDISPOSITIVOS:\n")
     print("\nRouters WPAN/Wifi activos:")
     routersWPANSolucion = []
     for router in routersNombres:
@@ -853,8 +832,8 @@ if status == pywraplp.Solver.OPTIMAL:
             print(c.name() + " = " + str(c.solution_value()))
             concentradoresSolucion.append(c.name())
             
-    print("CONEXIONES:\n")
-    print("\nConexiones terminales-WPAN:")
+    print("\nCONEXIONES:\n")
+    print("Conexiones terminales-WPAN:")
     conexiones_term_routersWPAN_Solucion = {}
     for conexionTerminalRouter in w_conexionesTerminalesRouterWPAN:
         for conn in conexionTerminalRouter:
@@ -911,6 +890,9 @@ if status == pywraplp.Solver.OPTIMAL:
     print("Número routers WPAN = " + str(len(routersWPANSolucion)))
     print("Número routers GPRS = " + str(len(routersGPRSSolucion)))
     print("Número concentradores = " + str(len(concentradoresSolucion)))
+    
+    
+    print("-------------------------------------")
     
     
     
@@ -1023,7 +1005,7 @@ if status == pywraplp.Solver.OPTIMAL:
             tipo, resto = conexion.split('_')
             router, router2 = resto.split('->')
             router = router + "W"
-            router2 = router2 + "W"
+            router2 = router2 + "G"
             x1, y1 = posiciones[router][0], posiciones[router][1]
             x2, y2 = posiciones[router2][0], posiciones[router2][1]
             plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
@@ -1070,7 +1052,6 @@ if status == pywraplp.Solver.OPTIMAL:
             G.add_node(nodo, node_type='concentrador', color='skyblue')
             
     
-    print("\nCreando grafos:")
     # Agregar conexiones al grafo
     for conexion, valor in conexiones_term_routersWPAN_Solucion.items():
         if valor == 1.0:
