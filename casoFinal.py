@@ -657,17 +657,17 @@ imprimir_tabla_cortada(r_conexionesRoutersWPANroutersWPAN,"R")
 # su nombre
 r_WPAN = {}
 for routerWPAN in routers:
-    r_WPAN_VAR = solver.IntVar(0,1,str(routerWPAN[0])+"_WPAN")
+    r_WPAN_VAR = solver.IntVar(0,solver.Infinity(),str(routerWPAN[0])+"_WPAN")
     r_WPAN[routerWPAN[0]] = r_WPAN_VAR
 
 r_GPRS = {}
 for routerGPRS in routers:
-    r_GPRS_VAR = solver.IntVar(0,1,str(routerGPRS[0])+"_GPRS")
+    r_GPRS_VAR = solver.IntVar(0,solver.Infinity(),str(routerGPRS[0])+"_GPRS")
     r_GPRS[routerGPRS[0]] = r_GPRS_VAR
     
 c_CONCENTRADORES = {}
 for concentrador in concentradores:
-    c_CONCENTRADOR_VAR = solver.IntVar(0,1,concentrador[0])
+    c_CONCENTRADOR_VAR = solver.IntVar(0,solver.Infinity(),concentrador[0])
     c_CONCENTRADORES[concentrador[0]] = c_CONCENTRADOR_VAR
     
 
@@ -719,6 +719,8 @@ conexiones_routersWPAN_to_routersGPRS = agrupar_conexiones(
 - R9:   No pueden existir dos conexiones simultáneas identicas pero de
         dirección opuesta [R_Rx->R_Ry] y [R_Ry->R_Rx]
         
+- R10:  Lo que entra en un router WPAN debe ser igual a lo que sale
+        
 '''
 
 # -R1: Cada terminal solo puede (Y DEBE) estar conectado a un router (GPRS/WPAN)
@@ -742,17 +744,20 @@ for terminal_WPAN, terminal_GPRS in zip(w_conexionesTerminalesRouterWPAN,
 for router in routersNombres:
     connFromTerm = sum(conexiones_terminales_to_routerWPAN[router])
     connFromR_WPAN = sum(conexiones_routersWPAN_to_routersWPAN[router])
-    solver.Add(connFromTerm + connFromR_WPAN <= capacidadMaxWPAN)
+    solver.Add(connFromTerm + connFromR_WPAN <= 
+                           capacidadMaxWPAN * r_WPAN[router])
 
 # -R3: (Capacidad máxima routers GPRS)
 for router in routersNombres:
     connFromR_GPRS = sum(conexiones_terminales_to_routerGPRS[router])
     connFromR_WPAN = sum(conexiones_routersWPAN_to_routersGPRS[router])
-    solver.Add(connFromR_GPRS + connFromR_WPAN <= capacidadMaxGPRS)
+    solver.Add(connFromR_GPRS + connFromR_WPAN 
+                   <= capacidadMaxGPRS * r_GPRS[router])
 
 # -R4: (Capacidad máxima concentradores)
 for concentrador in concentradorNombres:
-    solver.Add(sum(conexiones_routersWPAN_to_concentradores[concentrador]) <= capacidadMaxConcentradores)
+    solver.Add(sum(conexiones_routersWPAN_to_concentradores[concentrador]) 
+                <= capacidadMaxConcentradores * c_CONCENTRADORES[concentrador])
 
 #Un router solo existirá si cualquiera de sus conexiones existe
 # Es decir cada router debe ser >= a cualquiera de sus conexiones
@@ -869,8 +874,22 @@ for pareja in parejas_valores:
     nombreRouter, resto = nombreRouter.split('->')
     
     solver.Add(sum(pareja) <= r_WPAN[nombreRouter])
+    
+    
+# -R10: Las conexiones entrantes en un router WPAN deben ser iguales a las salientes
+for router, conexionesSalientes in zip(routersNombres, 
+                              r_conexionesRoutersWPANroutersWPAN):
+    
+    connFromTerm = sum(conexiones_terminales_to_routerWPAN[router])
+    connFromR_WPAN = sum(conexiones_routersWPAN_to_routersWPAN[router])
+    
+    valoresConexiones = [list(dic.values())[0] for dic in conexionesSalientes]    
+    connSalientes = sum(valoresConexiones) + (r_WPAN[router]*capacidadMaxWPAN)
+    
+    solver.Add(connFromTerm + connFromR_WPAN <= connSalientes)
+
                 
-               
+
             
 
 
