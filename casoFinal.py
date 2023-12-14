@@ -371,20 +371,22 @@ def obtener_conexiones_activas(lista_conexiones):
 
 
 #%% Leemos los datos provenientes de la hoja excel
+
 '''
+#Leemos todos los datos
 terminales = leerDatos('Terminales',1, 2, 4, 161, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,281,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
 
-'''
 
-'''
+
+
 # Leemos menos datos para validar el modelo con menor coste computacional
 terminales = leerDatos('Terminales',1, 2, 4, 10, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
-
 '''
+
 
 # Leemos menos datos para validar el modelo con menor coste computacional
 terminales = leerDatos('Terminales',1, 2, 4, 5, 1)
@@ -667,7 +669,7 @@ c_CONCENTRADORES = {}
 for concentrador in concentradores:
     c_CONCENTRADOR_VAR = solver.IntVar(0,1,concentrador[0])
     c_CONCENTRADORES[concentrador[0]] = c_CONCENTRADOR_VAR
-
+    
 
 print(str(len(r_WPAN)) + " posiciones candidatas para routers WPAN")
 print(str(len(r_GPRS)) + " posiciones candidatas para routers GPRS")
@@ -713,6 +715,9 @@ conexiones_routersWPAN_to_routersGPRS = agrupar_conexiones(
 
 - R8:   Un router WPAN que exista, debe estar conectado a un concentrador, otro
         router WPAN o un router GPRS
+        
+- R9:   No pueden existir dos conexiones simultáneas identicas pero de
+        dirección opuesta [R_Rx->R_Ry] y [R_Ry->R_Rx]
         
 '''
 
@@ -814,14 +819,14 @@ for routerWPAN, routerWPAN2, routerGPRS, nombreR in zip(
         suma_conex_RWPAN_Concentrador += list(conexionCandidata.values())[0]
     
     
-    ''' DESACTIVAMOS CONEXIONES ENTRE ROUTERS WPAN
+    ''' DESACTIVAMOS CONEXIONES ENTRE ROUTERS WPAN'''
     for conexionCandidata in routerWPAN2:
         # No agregamos la conexión consigo mismo
         resto, rout = str(list(conexionCandidata.values())[0]).split('->')
         if str(nombreR) != rout:
             #print(list(conexionCandidata.values()))
             suma_conex_RWPAN_RWPAN += list(conexionCandidata.values())[0]
-    '''
+    
         
        
     for conexionCandidata in routerGPRS:
@@ -837,7 +842,37 @@ for routerWPAN, routerWPAN2, routerGPRS, nombreR in zip(
     sumaTotal = (suma_conex_RWPAN_Concentrador + 
                      suma_conex_RWPAN_RWPAN + suma_conex_RWPAN_RGPRS)
     
-    solver.Add(sumaTotal == r_WPAN[nombreR])    
+    solver.Add(sumaTotal == r_WPAN[nombreR])  
+    
+# -R9:  Las conexiones entre dos routers, solo pueden ser en un sentido
+#       Evita la existencia simultánea de las conexiones [Rx->Ry] y [Ry->Rx]
+parejas_valores = []
+
+for conexion1 in r_conexionesRoutersWPANroutersWPAN:
+    for router_dict1 in conexion1:
+        router1, valor1 = list(router_dict1.items())[0]
+        resto1, Rorigen1 = str(valor1).split('_')
+        Rorigen1, Rdestino1 = Rorigen1.split('->')
+
+        for conexion2 in r_conexionesRoutersWPANroutersWPAN:
+            for router_dict2 in conexion2:
+                router2, valor2 = list(router_dict2.items())[0]
+                resto2, Rorigen2 = str(valor2).split('_')
+                Rorigen2, Rdestino2 = Rorigen2.split('->')
+
+                if Rorigen1 == Rdestino2 and Rdestino1 == Rorigen2:
+                    parejas_valores.append([valor1, valor2])
+                    break
+
+for pareja in parejas_valores:
+    resto, nombreRouter = str(pareja[0]).split('_')
+    nombreRouter, resto = nombreRouter.split('->')
+    
+    solver.Add(sum(pareja) <= r_WPAN[nombreRouter])
+                
+               
+            
+
 
 
 
