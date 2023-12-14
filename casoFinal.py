@@ -371,26 +371,26 @@ def obtener_conexiones_activas(lista_conexiones):
 
 #%% Leemos los datos provenientes de la hoja excel
 
-
+'''
 #Leemos todos los datos
 terminales = leerDatos('Terminales',1, 2, 4, 161, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,281,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
 
 
-'''
+
 # Leemos menos datos para validar el modelo con menor coste computacional
 terminales = leerDatos('Terminales',1, 2, 4, 10, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
 
-
+'''
 
 # Leemos menos datos para validar el modelo con menor coste computacional
-terminales = leerDatos('Terminales',1, 2, 4, 10, 1)
-routers = leerDatos('Ubic_Cand_Routers',1,2,3,8,1)
-concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,1,1)
-'''
+terminales = leerDatos('Terminales',1, 2, 4, 80, 1)
+routers = leerDatos('Ubic_Cand_Routers',1,2,3,50,1)
+concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,3,1)
+
 
 
 
@@ -911,8 +911,6 @@ Z = (costeWPAN * sum(r_WPAN.values()) + costeGPRS * sum(r_GPRS.values())
                              + costeConcentrador * sum(c_CONCENTRADORES.values()))
 
 solver.Minimize(Z)
-solver.parameters.num_search_workers = 1
-#solver.parameters.max_memory_in_mb = 2048
 status = solver.Solve()
 
 
