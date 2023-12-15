@@ -7,366 +7,20 @@ Created on Fri Dec  1 11:07:33 2023
 @author: jaime
 """
 
-import pandas as pd
 from ortools.linear_solver import pywraplp
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import networkx as nx
-from tabulate import tabulate
-import math
+
+
 import time
+
+from funcionesAuxiliares import *
 
 tiempoInicio = time.time()
 print("\nInicio ejecución\n")
 plt.close('All')
 
-
-#%% Definición de funciones utiles para el programa
-
-def dispositivos_en_rango_lista(nodos, dispositivos, distancia_maxima=0):
-    '''
-    Devuelve todos los dispositivos candidatos a conectarse con cada uno de los
-    nodos de una lista.
-    Por ejemplo, devuelve todos los routers candidatos a conectarse con cada
-    uno de los routers del escenario.
-
-    Argumentos:
-    - nodos (list): Lista de nodos con coordenadas (nombre, x, y).
-    - dispositivos (list(list)): Lista de dispositivos con coordenadas (nombre, x, y).
-    - distancia_maxima (float): (Opcional para terminales) Distancia máxima para considerar dispositivos cercanos.
-
-    Devuelve:
-    - list: Lista de listas de dispositivos dentro del rango especificado alrededor de cada nodo.
-    '''
-     
-    dispositivos_cercanos_por_nodo = []
-
-    for nodo in nodos:
-        # Si no pasamos un valor de distancia_maxima, usamos la distancia max
-        # almacenada en el valor de cada nodo (Solo vale para terminales)
-        if len(nodo) > 3:
-            distancia_maxima = nodo[3]
-            
-        x_nodo, y_nodo = nodo[1], nodo[2]
-        dispositivos_cercanos = {"Referencia":nodo, "Vecinos":[]}
-        
-        for dispositivo in dispositivos:
-            x_dispositivo, y_dispositivo = dispositivo[1], dispositivo[2]
-            distancia = math.sqrt((x_dispositivo - x_nodo)**2 + 
-                                  (y_dispositivo - y_nodo)**2)
-            if distancia <= distancia_maxima:
-                dispositivos_cercanos["Vecinos"].append(dispositivo)
-
-        dispositivos_cercanos_por_nodo.append(dispositivos_cercanos)
-
-    return dispositivos_cercanos_por_nodo
-
-
-def dispositivos_en_rango(nodo, dispositivos, distancia_maxima):
-    '''
-    Encuentra los dispositivos cercanos a un nodo dentro de una distancia máxima.
-
-    Argumentos:
-    - nodo (list): Coordenadas (nombre, x, y) del nodo central.
-    - dispositivos (list(list)): Lista de dispositivos con coordenadas (nombre, x, y).
-    - distancia_maxima (float): Distancia máxima para considerar dispositivos cercanos.
-
-    Devuelve:
-    - list: Lista de dispositivos dentro del rango especificado alrededor del nodo.
-    '''
-    
-    x_nodo, y_nodo = nodo[1], nodo[2]
-    dispositivos_cercanos = []
-
-    for dispositivo in dispositivos:
-        x_dispositivo, y_dispositivo = dispositivo[1], dispositivo[2]
-        distancia = math.sqrt((x_dispositivo - x_nodo)**2 + 
-                              (y_dispositivo - y_nodo)**2)
-        if distancia <= distancia_maxima:
-            dispositivos_cercanos.append(dispositivo)
-
-    return dispositivos_cercanos
-
-def leerDatos (hoja,x1, y1, x2, y2, orientacion):
-    '''
-    Lee datos de un archivo Excel en función dadas unas coordenadas y 
-    una orientación de lectura.
-
-    Argumentos:
-    - x1 (int): Coordenada x inicial.
-    - y1 (int): Coordenada y inicial.
-    - x2 (int): Coordenada x final.
-    - y2 (int): Coordenada y final.
-    - orientacion (int): Orientación de extracción (0 para columnas, 1 para filas).
-
-    Devuelve:
-    - list: Lista con los datos extraídos del archivo Excel.
-    '''
-    
-    x1=x1-1
-    x2=x2-1
-    y1=y1-1
-    y2=y2-1
-    df = pd.read_excel('Caso_HLP_2023.xlsx',sheet_name=hoja,header=None)
-    i = 0
-    l=[]
-    if orientacion == 1:
-        while (i+y1 <=y2):
-            l.append(list(df.iloc[y1+i][x1:x2+1]))
-            i=i+1
-    if orientacion == 0:
-        while (i+x1 <=x2):
-            l.append(list(df[x1+i][y1:y2+1]))
-            i=i+1
-    return l
-
-def pintar_plano(dispositivos, color, tipo, marcador='o'):
-    """
-    Pinta grafica dispositivos en un plano.
-    
-    Argumentos:
-    - dispositivos (list): Lista de dispositivos con sus coordenadas.
-    - color (str): Color de los dispositivos en el gráfico.
-    - tipo (str): Tipo de dispositivo (para la leyenda).
-    - marcador (str, opcional): Tipo de marcador ('o' por defecto para círculos).
-                               Puede ser 'o' para círculos, '*' para estrellas, 's' para cuadrados, etc.
-    
-    Devuelve:
-        Nada
-    """
-    
-    for dispositivo in dispositivos:
-        x, y = dispositivo[1], dispositivo[2]
-        plt.scatter(x, y, color=color, marker=marcador)
-        plt.text(x, y, dispositivo[0], fontsize=6, ha='right')
-        
-
-def pintar_nodo_rango(nodo, distanciaMax):
-    """
-    Función para pintar un nodo con un círculo que representa su rango máximo.
-
-    Parametros:
-        - nodoe (list): Lista que contiene las coordenadas x, y y el nombre del nodo.
-        - distanciaMax (float): Valor que representa la distancia máxima del rango.
-
-    Devuelve:
-        Nada
-    """
-    
-    x, y = nodo[1], nodo[2]
-    nombre = nodo[0]
-    plt.scatter(x, y, color='red', marker='*')
-    plt.text(x, y, nombre, fontsize=10, ha='right')
-
-
-    # Dibujar el círculo alrededor del terminal
-    circulo = plt.Circle((x, y), distanciaMax, edgecolor='red', 
-                         facecolor='blue',alpha=0.3)
-    plt.gcf().gca().add_artist(circulo)
-    
-
-def imprimir_tabla_cortada(datos,letra):
-    """
-    Imprime una tabla procesada a partir de los datos dados, mostrando como máximo 3 columnas por fila.
-    Si hay más de 3 columnas de datos por fila, se muestra '...' para indicar la limitación.
-    
-    Parámetros:
-        - datos: Lista de datos para procesar y mostrar en la tabla.
-        - letra: Carácter o cadena para etiquetar las columnas en la tabla.
-    
-    Devuelve:
-        -nada
-    """
-    
-    datos_procesados = []
-    i = 0
-    for fila in datos:
-        if len(fila) > 3:
-            fila = fila[:3] + ["..."]
-        datos_procesados.append(fila)
-        if i >= 5:
-            datos_procesados.append(["..."] * len(fila))
-            break
-        i += 1
-        
-    
-    l = str(letra)
-    headers = [l+"[t][0]", l+"[t][1]", l+"[t][2]", l+"[t][.]"]
-    print(tabulate(datos_procesados, headers=headers, tablefmt="grid"))
-    print("\n")
-
-
-           
- 
-def dibujar_nodos_con_texto(posiciones):
-    """
-    Dibuja los nodos en un gráfico con texto asociado a cada nodo.
-
-    Parámetros:
-        - posiciones (dict): Diccionario con las posiciones de los nodos activos
-
-    Dibuja los nodos en un gráfico, asignando distintos marcadores y colores según su tipo:
-        - Terminales (T): marcador '*', color rojo, tamaño 50.
-        - Routers (R):
-            - Routers WPAN: marcador 's', color morado, tamaño 200.
-            - Routers GPRS: marcador 's', color verde, tamaño 200.
-        - Concentradores (C): marcador 'o', color azul, tamaño 400.
-    Agrega texto a cada nodo para identificarlo en el gráfico.
-    """
-    for nodo, (x, y) in posiciones.items():
-        if nodo.startswith('T'):
-            plt.scatter(x, y, marker='*', color='salmon', s=50, label=nodo)
-            plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
-        elif nodo.startswith('R'):
-            if nodo.endswith('W'):
-                plt.scatter(x, y, marker='s', color='plum', s=200, label=nodo)
-                plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
-            elif nodo.endswith('G'):
-                plt.scatter(x, y, marker='s', color='LightGreen', s=200, label=nodo)
-                plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
-        elif nodo.startswith('C'):
-            plt.scatter(x, y, marker='o', color='skyblue', s=400, label=nodo) 
-            plt.text(x, y, nodo, ha='right', va='bottom', fontsize=8, color='black')
-        
- 
-    
-def dibujar_conexiones(conexiones, posiciones, color, estilo):
-    """
-    Dibuja las conexiones entre dispositivos en un gráfico.
-
-    Parámetros:
-        - conexiones (dict): Diccionario que contiene las conexiones y sus valores.
-        - posiciones (dict): Diccionario con las posiciones de los dispositivos.
-        - color (str): Color de las flechas que representan las conexiones.
-        - estilo (str): Estilo de línea de las flechas (p. ej., 'solid', 'dashed', 'dotted').
-    
-    Devuelve:
-        -nada
-
-    Las conexiones se representan con flechas que unen los dispositivos en el gráfico. 
-    Los dispositivos pueden ser terminales, routers o concentradores. El nombre del 
-    dispositivo puede variar dependiendo del tipo (WPAN/GPRS), y se adapta 
-    automáticamente para su representación visual.
-
-    Ejemplo de uso:
-    dibujar_conexiones(conexiones_term_routersWPAN_Solucion, posiciones, 'green', 'dashed')
-    """
-    for conexion, valor in conexiones.items():
-        if valor == 1.0:
-            tipo, resto = conexion.split('_')
-            dispositivo1, dispositivo2 = resto.split('->')
-            
-            # Modificar el nombre del dispositivo 2 según el tipo (WPAN/GPRS)
-            if tipo == 'W':
-                dispositivo2 = dispositivo2 + 'W'                
-            elif tipo == 'V':
-                dispositivo2 = dispositivo2 + 'G'                  
-            elif tipo == 'U':
-                dispositivo1 = dispositivo1 + 'W'
-            elif tipo == 'R':
-                dispositivo1 = dispositivo1 + 'W'  
-                dispositivo2 = dispositivo2 + 'W'                  
-            elif tipo == 'S':
-                dispositivo1 = dispositivo1 + 'W'
-                dispositivo2 = dispositivo2 + 'G'
-                        
-            x1, y1 = posiciones[dispositivo1][0], posiciones[dispositivo1][1]
-            x2, y2 = posiciones[dispositivo2][0], posiciones[dispositivo2][1]
-            
-            plt.annotate('', xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(
-                            arrowstyle='->', color=color, linestyle=estilo))
-            
-def configurar_grafico(titulo="",tight_layout = 1):
-    """
-    Configura el gráfico con los parámetros especificados.
-    
-    Parámetros:
-        - titulo (string): Contiene el título del gráfico.
-        - tight_layout (int): 1 ó 0. Evita el mensaje de error en nxgraph
-    """
-    plt.gca().set_aspect('equal', adjustable='box')  # Eje x e y proporcionales
-    plt.title(titulo)
-    plt.xlabel('Coordenada X')
-    plt.ylabel('Coordenada Y')
-    plt.xlim(-110, 110)
-    plt.ylim(-110, 110)
-    plt.grid(True)
-    if tight_layout:
-        plt.tight_layout()
-        
-def crea_grafico(figure):
-    """
-    Crea un gráfico dado un número de figura. Se usa para que todos sean iguales
-    """
-    plt.figure(figure)
-    plt.figure(figsize=(10, 8),dpi=150)
-    
-
-def agrupar_conexiones(conexiones):
-    """
-    Agrupa las conexiones en un diccionario. Agrupando todas las conexiones
-    que recibe un dispositivo en cada entrada.
-
-    Parametros:
-        - conexiones (list): Lista de conexiones a agrupar.
-
-    Devuelve:
-        - dict: Diccionario que contiene las conexiones agrupadas.
-    """
-    conexiones_agrupadas = {}
-
-    for lista_conexiones in conexiones:
-        for conexionCandidata in lista_conexiones:
-            for nodo, valorConexion in conexionCandidata.items():
-                if nodo in conexiones_agrupadas:
-                    conexiones_agrupadas[nodo].append(valorConexion)
-                else:
-                    conexiones_agrupadas[nodo] = []
-                    conexiones_agrupadas[nodo].append(valorConexion)
-
-    return conexiones_agrupadas
-    
-
-def obtener_nodos_activos(dispositivosNombres, d_DISPOSITIVOS):
-    """
-    Obtiene los dispositivos activos a partir de sus nombres y soluciones.
-    
-    Parametros:
-        - dispositivosNombres (list): Lista de nombres de dispositivos.
-        - d_DISPOSITIVOS (dict): Diccionario de objetos de dispositivos.
-    
-    Devuelve:
-        - list: Lista de nombres de dispositivos activos.
-    """
-    dispositivosSolucion = []
-    
-    for dispositivo in dispositivosNombres:
-        d = d_DISPOSITIVOS[dispositivo]
-        if d.solution_value() > 0:
-            dispositivosSolucion.append(d.name())
-    
-    return dispositivosSolucion
-
-def obtener_conexiones_activas(lista_conexiones):
-    """
-    Obtiene las conexiones activas a partir de una lista de conexiones.
-
-    Parámetros:
-        - conexiones (list): Lista de conexiones a evaluar.
-
-    Returns:
-        - dict: Diccionario de conexiones activas con sus valores de solución.
-    """
-    conexiones_activas = {}
-    for conexion in lista_conexiones:
-        for conn in conexion:
-            c = list(conn.values())[0]
-            if c.solution_value() > 0:
-                conexiones_activas[c.name()] = c.solution_value()
-
-    return conexiones_activas
-   
-    
 
 
 #%% Leemos los datos provenientes de la hoja excel
@@ -387,9 +41,10 @@ concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
 '''
 
 # Leemos menos datos para validar el modelo con menor coste computacional
-terminales = leerDatos('Terminales',1, 2, 4, 80, 1)
-routers = leerDatos('Ubic_Cand_Routers',1,2,3,50,1)
-concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,3,1)
+terminales = leerDatos('Terminales',1, 2, 4, 10, 1)
+routers = leerDatos('Ubic_Cand_Routers',1,2,3,15,1)
+concentradores = leerDatos('Ubic_Cand_Concentr',1,3,3,5,1)
+concentradores = []
 
 
 
@@ -510,7 +165,7 @@ configurar_grafico("Ubicaciones routers candidatas para conectarse con " +
 
 
 #%% Pintamos concentradores en rango de un router de ejemplo
-indiceEjemplo = 10
+indiceEjemplo = 0
 
 routerEjemplo = conn_c_rout_conc[indiceEjemplo]["Referencia"]
 nombreRouterEjemplo = str(routerEjemplo[0])
@@ -559,16 +214,19 @@ for conexionCandidata in conn_c_term_rout:
         
     w_conexionesTerminalesRouterWPAN.append(w_aux)
 
+#print(w_conexionesTerminalesRouterWPAN)
+
+
+'''          
+print(routers_dict)
+print()
+print(routers_dict['R1'])
+'''
+
+
 
 print("\nDefiniendo variables conexión terminal -> routers WPAN:\n")
-print("La estructura es la siguiente:")
-print(" - Cada fila contiene las conexiones candidatas de un terminal con todos" + 
-      " los routers a su alcance.")
-print(" - La referencia {Rxx : W_yy->R_xx} sirve para posteriormente recuperar" + 
-      " las conexiones de un router con todos los terminales haciendo uso de" +
-      " la referencia R_xx\n")
-
-imprimir_tabla_cortada(w_conexionesTerminalesRouterWPAN,"W")
+#imprimir_tabla_cortada(w_conexionesTerminalesRouterWPAN,"W")
 
 
 
@@ -588,7 +246,7 @@ for conexionCandidata in conn_c_term_rout:
     
     v_conexionesTerminalesRouterGPRS.append(v_aux)
 
-imprimir_tabla_cortada(v_conexionesTerminalesRouterGPRS,"V")
+#imprimir_tabla_cortada(v_conexionesTerminalesRouterGPRS,"V")
 
 
 
@@ -608,7 +266,7 @@ for conexionCandidata in conn_c_rout_conc:
     u_conexionesRoutersWPANConcentradores.append(u_aux)
 
 
-imprimir_tabla_cortada(u_conexionesRoutersWPANConcentradores,"U")
+#imprimir_tabla_cortada(u_conexionesRoutersWPANConcentradores,"U")
 
 
 
@@ -627,7 +285,7 @@ for conexionCandidata in conn_c_rout_rout:
     s_conexionesRoutersWPANroutersGPRS.append(s_aux)
 
 
-imprimir_tabla_cortada(s_conexionesRoutersWPANroutersGPRS,"S")
+#imprimir_tabla_cortada(s_conexionesRoutersWPANroutersGPRS,"S")
 
 
 
@@ -646,8 +304,39 @@ for conexionCandidata in conn_c_rout_rout:
     r_conexionesRoutersWPANroutersWPAN.append(r_aux)
 
 
-imprimir_tabla_cortada(r_conexionesRoutersWPANroutersWPAN,"R")
+#imprimir_tabla_cortada(r_conexionesRoutersWPANroutersWPAN,"R")
+#w_conexionesTerminalesRouterWPAN_DICT = generar_diccionario_variables_conn(
+#                                                    conn_c_term_rout, solver)
 
+'''
+print("\nw_conexionesTerminaleRouterWPAN")
+print(w_conexionesTerminalesRouterWPAN)
+print("\nw_conexionesTerminaleRouterWPAN_DICT")
+print(w_conexionesTerminalesRouterWPAN_DICT)
+print()
+
+
+conexiones_terminales_to_routerWPAN_DICT = reorganiza_dict(w_conexionesTerminalesRouterWPAN_DICT)
+
+print(conexiones_terminales_to_routerWPAN_DICT)
+
+routers_dict = {}
+
+# Iterar a través del diccionario original
+for terminal, rout in w_conexionesTerminalesRouterWPAN_DICT.items():
+    # Iterar a través de los routers asociados a cada terminal
+    for router, value in rout.items():
+        # Verificar si el router ya existe en el diccionario reorganizado
+        if router not in routers_dict:
+            # Si no existe, crear una entrada para ese router y agregar el terminal y su valor
+            routers_dict[router] = {terminal: value}
+        else:
+            # Si el router ya existe, agregar el terminal y su valor al diccionario existente
+            routers_dict[router][terminal] = value
+
+
+print()
+'''
 
 
 # Creamos las variables routers gprs, wpan y concentradores. 1 por cada uno.
@@ -695,6 +384,13 @@ conexiones_routersWPAN_to_routersWPAN = agrupar_conexiones(
 conexiones_routersWPAN_to_routersGPRS = agrupar_conexiones(
                                         s_conexionesRoutersWPANroutersGPRS)
 
+'''
+print()
+print(conexiones_terminales_to_routerWPAN['R1'])
+print()
+print(list(routers_dict['R1'].values()))
+'''
+
 #%% Definimos las restricciones
 '''
 - R1:   Cada terminal solo puede estar conectado a 1 router (GPRS o WPAN)
@@ -739,9 +435,13 @@ for terminal_WPAN, terminal_GPRS in zip(w_conexionesTerminalesRouterWPAN,
 
 # Añadimos las restricciones de capacidad de los routers y concentradores    
 # -R2: (Capacidad máxima routers WPAN)
+print("R_WPAN")
+print(r_WPAN)
 for router in routersNombres:
     connFromTerm = sum(conexiones_terminales_to_routerWPAN[router])
     connFromR_WPAN = sum(conexiones_routersWPAN_to_routersWPAN[router])
+    '''¿Habría que sumar también las conexiones salientes?'''
+    print(router)
     solver.Add(connFromTerm + connFromR_WPAN <= 
                            capacidadMaxWPAN * r_WPAN[router])
 
@@ -822,13 +522,14 @@ for routerWPAN, routerWPAN2, routerGPRS, nombreR in zip(
         suma_conex_RWPAN_Concentrador += list(conexionCandidata.values())[0]
     
     
-    ''' DESACTIVAMOS CONEXIONES ENTRE ROUTERS WPAN'''
+    ''' DESACTIVAMOS CONEXIONES ENTRE ROUTERS WPAN
     for conexionCandidata in routerWPAN2:
         # No agregamos la conexión consigo mismo
         resto, rout = str(list(conexionCandidata.values())[0]).split('->')
         #if str(nombreR) != rout:
             #print(list(conexionCandidata.values()))
             #suma_conex_RWPAN_RWPAN += list(conexionCandidata.values())[0]
+    '''
     
         
        
@@ -846,6 +547,9 @@ for routerWPAN, routerWPAN2, routerGPRS, nombreR in zip(
                      suma_conex_RWPAN_RWPAN + suma_conex_RWPAN_RGPRS)
     
     solver.Add(sumaTotal == r_WPAN[nombreR])  
+    
+    
+    
     
 # -R9:  Las conexiones entre dos routers, solo pueden ser en un sentido
 #       Evita la existencia simultánea de las conexiones [Rx->Ry] y [Ry->Rx]
@@ -875,6 +579,7 @@ for pareja in parejas_valores:
     
     
 # -R10: Las conexiones entrantes en un router WPAN deben ser iguales a las salientes
+'''
 for router, conexionesSalientesR, conexionesSalientesS, conexionesSalientesU in zip(
         routersNombres, r_conexionesRoutersWPANroutersWPAN,
         s_conexionesRoutersWPANroutersGPRS, u_conexionesRoutersWPANConcentradores):
@@ -889,15 +594,18 @@ for router, conexionesSalientesR, conexionesSalientesS, conexionesSalientesU in 
     
     connToR_WPAN= sum(valoresConexionesOUT_W)
     connToR_GPRS= sum(valoresConexionesOUT_G)
-    connToR_CONC= sum(valoresConexionesOUT_C)
+    connToC_CONC= sum(valoresConexionesOUT_C)
     
     
     
-    conexionesOUT = connToR_WPAN + connToR_GPRS + connToR_CONC + r_WPAN[router]*capacidadMaxWPAN
+    
+    
+    conexionesOUT = 5*(connToR_WPAN + connToR_GPRS + connToC_CONC) #+ r_WPAN[router])
+  
 
-    
     solver.Add(conexionesIN <= conexionesOUT)
 
+'''
                 
 
             
@@ -972,10 +680,14 @@ if status == pywraplp.Solver.OPTIMAL:
     print("\nConexiones terminales-GPRS:")
     conexiones_term_routersGPRS_Solucion = obtener_conexiones_activas(
                                             v_conexionesTerminalesRouterGPRS)
-
+    
+    print(conexiones_term_routersGPRS_Solucion)
+    
+    print("\nConexiones WPAN-Concentradores")
     conexiones_routers_concentradores_Solucion = obtener_conexiones_activas(
                                         u_conexionesRoutersWPANConcentradores)
-    print(conexiones_term_routersGPRS_Solucion)
+    print(conexiones_routers_concentradores_Solucion)
+    
 
     print("\nConexiones WPAN-WPAN")
     conexiones_routersWPAN_routersWPAN_Solucion = obtener_conexiones_activas(
@@ -987,6 +699,8 @@ if status == pywraplp.Solver.OPTIMAL:
     conexiones_routersWPAN_routersGPRS_Solucion = obtener_conexiones_activas(
                                             s_conexionesRoutersWPANroutersGPRS)
     print(conexiones_routersWPAN_routersGPRS_Solucion)
+    
+    
     
     print("\nConexiones totales: ")
     print("terminales-WPAN = "+str(len(conexiones_term_routersWPAN_Solucion)))
