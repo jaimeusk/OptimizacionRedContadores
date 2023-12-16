@@ -651,20 +651,6 @@ for conexionCandidata in conn_c_rout_rout:
 imprimir_tabla_cortada(r_conexionesRoutersWPANroutersWPAN,"R")
 
 
-print("\nDefiniendo variables de flujo entre routers WPAN y routers WPAN: \n")
-f_flujosSalientesRouters = []
-for conexionCandidata in conn_c_rout_rout:
-    f_aux = []
-    for routerCandidato in conexionCandidata["Vecinos"]:
-        rRef = str(conexionCandidata['Referencia'][0])
-        rVecino = routerCandidato[0]
-        variable_f = solver.IntVar(0,solver.Infinity(),'F_'+rRef+'->'+rVecino)
-        f_aux.append({str(rVecino):variable_f})
-        
-    f_flujosSalientesRouters.append(f_aux)
-
-imprimir_tabla_cortada(f_flujosSalientesRouters,"F")
-
 # Creamos las variables routers gprs, wpan y concentradores. 1 por cada uno.
 # Las almacenamos en diccionarios para que sean facilmente recuperables usando
 # su nombre
@@ -696,6 +682,10 @@ for routerWPAN in routersNombres:
     e_DISPOSITIVO_VAR = solver.IntVar(0,1,"E_"+routerWPAN+"_WPAN")
     e_DISPOSITIVO["E_"+routerWPAN+"_WPAN"] = e_DISPOSITIVO_VAR
     
+D = {}
+for router in routersNombres:
+    D[router] = solver.NumVar(0, len(routersNombres) - 1,"D_"+router)
+    
 
     
 
@@ -724,8 +714,6 @@ conexiones_routersWPAN_to_routersWPAN = agrupar_conexiones(
 
 conexiones_routersWPAN_to_routersGPRS = agrupar_conexiones(
                                         s_conexionesRoutersWPANroutersGPRS)
-
-flujos_entrantes_en_router = agrupar_conexiones(f_flujosSalientesRouters)
 
 #%% Definimos las restricciones
 '''
@@ -794,8 +782,6 @@ for concentrador in concentradorNombres:
 #   R1 >= W3->1
 #   R1 >= W...->1
 for router in routersNombres:
-    
-    solver.Add(r_WPAN[router] <= e_DISPOSITIVO["E_"+router+"_WPAN"])
     
     # -R5: Un router WPAN debe ser >= que cualquiera de sus conexiones entrante
     for conexion_T_RW in conexiones_terminales_to_routerWPAN[router]:
@@ -906,18 +892,21 @@ for pareja in parejas_valores:
     
  
 # -R10: El flujo
-
+'''
 for conToConcentradores, conToWPANes, conToGPRSes, nombreR in zip(
                                     u_conexionesRoutersWPANConcentradores, 
                                     r_conexionesRoutersWPANroutersWPAN,
                                     s_conexionesRoutersWPANroutersGPRS,
                                     routersNombres):
     
+    
+    
     exitoRouter = e_DISPOSITIVO["E_" + nombreR + "_WPAN"]
     
     for conToConcentrador in conToConcentradores:
         c = list(conToConcentrador.values())[0]
         solver.Add(exitoRouter >= c)
+        print(str(exitoRouter) + " >= " + str(c))
     
     for conToRouterW, conToRouterG in zip(conToWPANes, conToGPRSes):
         conW = list(conToRouterW.values())[0]
@@ -925,17 +914,15 @@ for conToConcentradores, conToWPANes, conToGPRSes, nombreR in zip(
         resto, routerConectado = str(conW).split("_")
         resto, routerConectado = routerConectado.split("->")
         exitoRC = e_DISPOSITIVO["E_"+routerConectado+"_WPAN"]
+        print(str(exitoRouter) + " == " + str(conW) +" + " + str(conG) +
+              " + " + str(exitoRC) + " - 1")
         solver.Add(exitoRouter >= conW + conG + exitoRC - 1)
-        
-    '''
-    print()
-    print(conToConcentrador)
-    print(conToWPAN)
-    print(conToGPRS)
-    '''
     
-    print(exitoRouter)
+    # Para que un router exista, debe estar conectado a un nodo final
+    solver.Add(r_WPAN[nombreR] == e_DISPOSITIVO["E_"+nombreR+"_WPAN"])
 '''
+    
+'''  
 print(conexiones_routersWPAN_to_routersWPAN)
 print(flujos_entrantes_en_router)
 print("\n")
@@ -962,8 +949,19 @@ for router in flujos_entrantes_en_router:
         
     
     
-    #solver.Add(f_WPAN[router] == )
+# R11: Diagrama árbol
+M = 3
+for router, conexionRwRw in zip(routersNombres, r_conexionesRoutersWPANroutersWPAN):
     
+    RouterMayor = D[router]
+    
+    valores = [list(diccionario.values())[0] for diccionario in conexionRwRw]
+    claves = [list(diccionario.keys())[0] for diccionario in conexionRwRw]
+
+    for conexion, router2 in zip(valores, claves):
+        routerMenor = D[router2]
+        solver.Add(routerMenor >= RouterMayor + 1 - M * (1 - conexion))
+        print(str(routerMenor) + " >= " + str(RouterMayor) +  " + 1 - M * (1 - " + str(conexion) + ")")
 
                 
                
@@ -1233,14 +1231,20 @@ if status == pywraplp.Solver.OPTIMAL:
     
     plt.show()
     
+    '''
+    print(conexiones_term_routersWPAN_Solucion)
+    print(conexiones_term_routersGPRS_Solucion)
+    print(conexiones_routersWPAN_routersWPAN_Solucion)
+    print(conexiones_routersWPAN_routersGPRS_Solucion)
+    print(conexiones_routers_concentradores_Solucion)
     for dispositivo in routersNombres:
-        d2 = e_DISPOSITIVO["E_"+dispositivo+"_GPRS"]
         d = e_DISPOSITIVO["E_"+dispositivo+"_WPAN"]
-        print(d)
-        print(d.solution_value())
-        print(d2.solution_value())
-        print()
+        if d.solution_value() == 1:
             
+            print(d)
+            print(d.solution_value())
+            print()
+    '''
     
     
 
