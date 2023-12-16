@@ -372,7 +372,7 @@ def obtener_conexiones_activas(lista_conexiones):
 
 #%% Leemos los datos provenientes de la hoja excel
 
-'''
+
 #Leemos todos los datos
 terminales = leerDatos('Terminales',1, 2, 4, 161, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,281,1)
@@ -380,18 +380,19 @@ concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
 
 
 
-
+'''
 # Leemos menos datos para validar el modelo con menor coste computacional
 terminales = leerDatos('Terminales',1, 2, 4, 10, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
 '''
 
-
+'''
 # Leemos menos datos para validar el modelo con menor coste computacional
-terminales = leerDatos('Terminales',1, 2, 4, 5, 1)
-routers = leerDatos('Ubic_Cand_Routers',1,2,3,14,1)
+terminales = leerDatos('Terminales',1, 2, 4, 100, 1)
+routers = leerDatos('Ubic_Cand_Routers',1,2,3,40,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
+'''
 
 
 
@@ -737,6 +738,8 @@ conexiones_routersWPAN_to_routersGPRS = agrupar_conexiones(
 - R9:   No pueden existir dos conexiones simultáneas identicas pero de
         dirección opuesta [R_Rx->R_Ry] y [R_Ry->R_Rx]
         
+- R10:  Jerarquía de árbol
+        
 '''
 
 # -R1: Cada terminal solo puede (Y DEBE) estar conectado a un router (GPRS/WPAN)
@@ -891,65 +894,8 @@ for pareja in parejas_valores:
     solver.Add(sum(pareja) <= r_WPAN[nombreRouter])
     
  
-# -R10: El flujo
-'''
-for conToConcentradores, conToWPANes, conToGPRSes, nombreR in zip(
-                                    u_conexionesRoutersWPANConcentradores, 
-                                    r_conexionesRoutersWPANroutersWPAN,
-                                    s_conexionesRoutersWPANroutersGPRS,
-                                    routersNombres):
-    
-    
-    
-    exitoRouter = e_DISPOSITIVO["E_" + nombreR + "_WPAN"]
-    
-    for conToConcentrador in conToConcentradores:
-        c = list(conToConcentrador.values())[0]
-        solver.Add(exitoRouter >= c)
-        print(str(exitoRouter) + " >= " + str(c))
-    
-    for conToRouterW, conToRouterG in zip(conToWPANes, conToGPRSes):
-        conW = list(conToRouterW.values())[0]
-        conG = list(conToRouterG.values())[0]
-        resto, routerConectado = str(conW).split("_")
-        resto, routerConectado = routerConectado.split("->")
-        exitoRC = e_DISPOSITIVO["E_"+routerConectado+"_WPAN"]
-        print(str(exitoRouter) + " == " + str(conW) +" + " + str(conG) +
-              " + " + str(exitoRC) + " - 1")
-        solver.Add(exitoRouter >= conW + conG + exitoRC - 1)
-    
-    # Para que un router exista, debe estar conectado a un nodo final
-    solver.Add(r_WPAN[nombreR] == e_DISPOSITIVO["E_"+nombreR+"_WPAN"])
-'''
-    
-'''  
-print(conexiones_routersWPAN_to_routersWPAN)
-print(flujos_entrantes_en_router)
-print("\n")
-
-    
-
-sumaFlujoFromRouters = []
-for router in flujos_entrantes_en_router:
-    
-    flujosEntrantesDeRouters = sum(flujos_entrantes_en_router[router])
-    sumaFlujoEntranteDeTermin = sum(conexiones_terminales_to_routerWPAN[router])
-    
-    flujoTotalEntrante = flujosEntrantesDeRouters + sumaFlujoEntranteDeTermin
-    
-
-    resto, nombreRouter = str(conexion).split("_")
-    nombreRouter, resto = nombreRouter.split("->")
-    print(conexion)
-    print(nombreRouter)
-    print(f_WPAN[nombreRouter])
-    flujoInFromRouters = conexion * f_WPAN[nombreRouter]
-    sumaFlujoFromRouters.append(flujoInFromRouters)
-    '''    
-        
-    
-    
-# R11: Diagrama árbol
+       
+# -R10: Diagrama árbol
 M = 3
 for router, conexionRwRw in zip(routersNombres, r_conexionesRoutersWPANroutersWPAN):
     
@@ -961,7 +907,6 @@ for router, conexionRwRw in zip(routersNombres, r_conexionesRoutersWPANroutersWP
     for conexion, router2 in zip(valores, claves):
         routerMenor = D[router2]
         solver.Add(routerMenor >= RouterMayor + 1 - M * (1 - conexion))
-        print(str(routerMenor) + " >= " + str(RouterMayor) +  " + 1 - M * (1 - " + str(conexion) + ")")
 
                 
                
