@@ -401,6 +401,9 @@ distMaxTerm = leerDatos('Distancias_Máximas',2,2,4,2,1)[0]
 distMaxRout = leerDatos('Distancias_Máximas',2,3,2,3,1)[0][0]
 distMaxConc = leerDatos('Distancias_Máximas',2,4,2,4,1)[0][0]
 
+distMaxRout = int(distMaxRout/3)
+distMaxConc = int(distMaxConc/3)
+
 capacidadMaxWPAN = leerDatos('Capacidad_y_Coste',2,2,2,2,1)[0][0]
 capacidadMaxGPRS = leerDatos('Capacidad_y_Coste',2,3,2,3,1)[0][0]
 capacidadMaxConcentradores = leerDatos('Capacidad_y_Coste',2,4,2,4,1)[0][0]
@@ -419,6 +422,7 @@ concentradorNombres = [fila[0] for fila in concentradores]
 # Cambiamos el valor "Tipo de terminal" por su distancia máxima
 for terminal in terminales:
     terminal[3] = distMaxTerm[terminal[3]-1]
+    terminal[3] = int(terminal[3]/2)
 
 
 
@@ -670,18 +674,7 @@ for concentrador in concentradorNombres:
     c_CONCENTRADOR_VAR = solver.IntVar(0,solver.Infinity(),concentrador)
     c_CONCENTRADORES[concentrador] = c_CONCENTRADOR_VAR
     
-e_DISPOSITIVO = {}
-for concentrador in concentradorNombres:
-    e_DISPOSITIVO_VAR = solver.IntVar(1,1,"E_"+concentrador)
-    e_DISPOSITIVO[concentrador] = e_DISPOSITIVO_VAR
-    
-for routerGPRS in routersNombres:
-    e_DISPOSITIVO_VAR = solver.IntVar(1,1,"E_"+routerGPRS+"_GPRS")
-    e_DISPOSITIVO["E_"+routerGPRS+"_GPRS"] = e_DISPOSITIVO_VAR
-    
-for routerWPAN in routersNombres:
-    e_DISPOSITIVO_VAR = solver.IntVar(0,1,"E_"+routerWPAN+"_WPAN")
-    e_DISPOSITIVO["E_"+routerWPAN+"_WPAN"] = e_DISPOSITIVO_VAR
+
     
 D = {}
 for router in routersNombres:
@@ -1176,23 +1169,6 @@ if status == pywraplp.Solver.OPTIMAL:
     
     plt.show()
     
-    '''
-    print(conexiones_term_routersWPAN_Solucion)
-    print(conexiones_term_routersGPRS_Solucion)
-    print(conexiones_routersWPAN_routersWPAN_Solucion)
-    print(conexiones_routersWPAN_routersGPRS_Solucion)
-    print(conexiones_routers_concentradores_Solucion)
-    for dispositivo in routersNombres:
-        d = e_DISPOSITIVO["E_"+dispositivo+"_WPAN"]
-        if d.solution_value() == 1:
-            
-            print(d)
-            print(d.solution_value())
-            print()
-    '''
-    
-    
-
     
     costeFinal = Z.solution_value()
     print("El coste final de la infraestructura es: " + str(costeFinal))
@@ -1209,7 +1185,7 @@ with open('modeloExportadoCasoFinal.txt', 'w') as f:
 
 tiempoFin = time.time()
 
-tiempo = round(tiempoFin - tiempoInicio,3)
+tiempo = round(tiempoFin - tiempoInicio,3)/60/60
 
 print("\nFin de la ejecución. Se completó en " + str(tiempo) +" segundos\n")
 
