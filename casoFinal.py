@@ -253,6 +253,8 @@ def dibujar_conexiones(conexiones, posiciones, color, estilo):
     """
     for conexion, valor in conexiones.items():
         if valor == 1.0:
+            print(conexion)
+            print(valor)
             tipo, resto = conexion.split('_')
             dispositivo1, dispositivo2 = resto.split('->')
             
@@ -374,18 +376,19 @@ def obtener_conexiones_activas(lista_conexiones):
 
 
 #Leemos todos los datos
+'''
 terminales = leerDatos('Terminales',1, 2, 4, 161, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,281,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
-
-
-
 '''
+
+
+
 # Leemos menos datos para validar el modelo con menor coste computacional
 terminales = leerDatos('Terminales',1, 2, 4, 10, 1)
-routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
+routers = leerDatos('Ubic_Cand_Routers',1,2,3,30,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
-'''
+
 
 '''
 # Leemos menos datos para validar el modelo con menor coste computacional
@@ -401,8 +404,7 @@ distMaxTerm = leerDatos('Distancias_Máximas',2,2,4,2,1)[0]
 distMaxRout = leerDatos('Distancias_Máximas',2,3,2,3,1)[0][0]
 distMaxConc = leerDatos('Distancias_Máximas',2,4,2,4,1)[0][0]
 
-distMaxRout = int(distMaxRout/3)
-distMaxConc = int(distMaxConc/3)
+
 
 capacidadMaxWPAN = leerDatos('Capacidad_y_Coste',2,2,2,2,1)[0][0]
 capacidadMaxGPRS = leerDatos('Capacidad_y_Coste',2,3,2,3,1)[0][0]
@@ -422,7 +424,6 @@ concentradorNombres = [fila[0] for fila in concentradores]
 # Cambiamos el valor "Tipo de terminal" por su distancia máxima
 for terminal in terminales:
     terminal[3] = distMaxTerm[terminal[3]-1]
-    terminal[3] = int(terminal[3]/2)
 
 
 
@@ -1009,7 +1010,7 @@ if status == pywraplp.Solver.OPTIMAL:
     crea_grafico(5)
 
     
-    
+    print(conexiones_term_routersWPAN_Solucion)
     # Dibujar los nodos y las conexiones
     dibujar_nodos_con_texto(posiciones)
     
