@@ -588,13 +588,16 @@ if status == pywraplp.Solver.OPTIMAL:
     html_tabla_s = generar_tabla_html(s_RWPAN_RGPRS_Solucion, 
                                       ["R - WPAN", "R - GPRS", "Valor"])
     
-    html_final = imprime_html(html_tabla_w, "Terminales a routers WPAN","solucionConexiones3.png")
-    html_final = imprime_html(html_tabla_v, "Terminales a routers GPRS", "solucionConexiones4.png", html_final)
-    html_final = imprime_html(html_tabla_r, "Routers WPAN routers WPAN","",html_final)
-    html_final = imprime_html(html_tabla_s, "Routers WPAN routers GPRS","",html_final)
-    html_final = imprime_html(html_tabla_u, "Routers WPAN a Concentradores","",html_final)
-    html_final = imprime_html(tablaConexiones, "Resumen conexiones","", html_final)
-    html_final = imprime_html(tablaDispositivos, "Resumen dispositivos","", html_final)
+    html_final = imprime_html(tablaConexiones, "Resumen conexiones","",
+                              tabla2=tablaDispositivos, 
+                              titulo2="Resumen dispositivos",enlace2="", 
+                              html=None)
+    html_final = imprime_html(html_tabla_w, "Terminales a routers WPAN","solucionConexiones3.png", html=html_final)
+    html_final = imprime_html(html_tabla_v, "Terminales a routers GPRS", "solucionConexiones4.png", html=html_final)
+    html_final = imprime_html(html_tabla_r, "Routers WPAN routers WPAN","",html=html_final)
+    html_final = imprime_html(html_tabla_s, "Routers WPAN routers GPRS","",html=html_final)
+    html_final = imprime_html(html_tabla_u, "Routers WPAN a Concentradores","",html=html_final)
+    
     
     # Escribe el contenido HTML en un archivo
     with open('informe.html', 'w') as file:

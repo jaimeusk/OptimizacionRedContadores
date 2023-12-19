@@ -608,7 +608,8 @@ def crea_grafico_conexiones_2(numFigura, posiciones,
 
 
 
-def imprime_html(tabla, titulo, enlace, html=None):
+def imprime_html(tabla, titulo, enlace, 
+                 tabla2=None, titulo2=None, enlace2=None, html=None):
     """
     Genera o agrega a un string con contenido HTML que incluye tablas.
 
@@ -701,6 +702,18 @@ def imprime_html(tabla, titulo, enlace, html=None):
                     .instrucciones h2 {
                         margin-top: 0;             
                     }
+                    .flex-container-tablas {
+                        display: flex;
+                        justify-content: space-around;
+                        align-items: flex-start;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .tabla-container {
+                        flex: 1;
+                        max-width: 95%;
+                        margin: 10px;
+                    }
                 </style>
             </head>
             <body>
@@ -732,13 +745,16 @@ def imprime_html(tabla, titulo, enlace, html=None):
     html = re.sub(r'</div>\s*</body>\s*</html>\s*$', '', html, 
                   flags=re.IGNORECASE | re.DOTALL)
     
-    html += f"""
-            <h2><a href="#" onclick="window.open('{enlace}', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')">{titulo}</a></h2>
-            {tabla}                
-            </div>
-        </body>
-        </html>
-        """
+    html += "<div class='flex-container-tablas'>"
+    
+    html += f"<div class='tabla-container'><h2><a href='#' onclick=\"window.open('{enlace}', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')\">{titulo}</a></h2>{tabla}</div>"
+
+    
+    if tabla2:
+        html += f"<div class='tabla-container'><h2><a href='#' onclick=\"window.open('{enlace2}', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')\">{titulo2}</a></h2>{tabla2}</div>"
+
+    html += "</div></div></body></html>"        
+    
 
     return html
 
