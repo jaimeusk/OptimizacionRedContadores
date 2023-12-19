@@ -1,17 +1,17 @@
 Conexiones Terminales-Routers WPAN:
 <table>
 <thead>
-<tr><th>Terminal                        </th><th>R - WPAN  </th><th style="text-align: right;">  Valor</th></tr>
+<tr><th>Terminal                                   </th><th>R - WPAN  </th><th style="text-align: right;">  Valor</th></tr>
 </thead>
 <tbody>
-<tr><td>&lt;a href=&quot;imagenes/T2.jpg&quot;&gt;T2&lt;/a&gt;</td><td>R4        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>&lt;a href=&quot;imagenes/T3.jpg&quot;&gt;T3&lt;/a&gt;</td><td>R1        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>&lt;a href=&quot;imagenes/T4.jpg&quot;&gt;T4&lt;/a&gt;</td><td>R4        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>&lt;a href=&quot;imagenes/T5.jpg&quot;&gt;T5&lt;/a&gt;</td><td>R1        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>&lt;a href=&quot;imagenes/T6.jpg&quot;&gt;T6&lt;/a&gt;</td><td>R1        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>&lt;a href=&quot;imagenes/T7.jpg&quot;&gt;T7&lt;/a&gt;</td><td>R1        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>&lt;a href=&quot;imagenes/T8.jpg&quot;&gt;T8&lt;/a&gt;</td><td>R1        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>&lt;a href=&quot;imagenes/T9.jpg&quot;&gt;T9&lt;/a&gt;</td><td>R4        </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T2_en_rango.jpg&quot;&gt;T2&lt;/a&gt;</td><td>R18       </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T3_en_rango.jpg&quot;&gt;T3&lt;/a&gt;</td><td>R18       </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T4_en_rango.jpg&quot;&gt;T4&lt;/a&gt;</td><td>R15       </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T5_en_rango.jpg&quot;&gt;T5&lt;/a&gt;</td><td>R15       </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T6_en_rango.jpg&quot;&gt;T6&lt;/a&gt;</td><td>R15       </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T7_en_rango.jpg&quot;&gt;T7&lt;/a&gt;</td><td>R18       </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T8_en_rango.jpg&quot;&gt;T8&lt;/a&gt;</td><td>R15       </td><td style="text-align: right;">      1</td></tr>
+<tr><td>&lt;a href=&quot;terminales/T9_en_rango.jpg&quot;&gt;T9&lt;/a&gt;</td><td>R15       </td><td style="text-align: right;">      1</td></tr>
 </tbody>
 </table>
 
@@ -30,17 +30,17 @@ Conexiones Routers WPAN-Concentradores:
 <tr><th>R - WPAN  </th><th>Concent.  </th><th style="text-align: right;">  Valor</th></tr>
 </thead>
 <tbody>
-<tr><td>R1        </td><td>C1        </td><td style="text-align: right;">      1</td></tr>
-<tr><td>R4        </td><td>C1        </td><td style="text-align: right;">      1</td></tr>
+<tr><td>R18       </td><td>C1        </td><td style="text-align: right;">      1</td></tr>
 </tbody>
 </table>
 
 Conexiones Router WPAN a Router WPAN:
 <table>
 <thead>
-<tr></tr>
+<tr><th>R - WPAN  </th><th>R - WPAN  </th><th style="text-align: right;">  Valor</th></tr>
 </thead>
 <tbody>
+<tr><td>R15       </td><td>R18       </td><td style="text-align: right;">      1</td></tr>
 </tbody>
 </table>
 

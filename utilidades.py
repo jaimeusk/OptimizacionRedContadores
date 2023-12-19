@@ -130,38 +130,42 @@ def obtener_conexiones_activas(lista_conexiones):
 
 
 
-def crea_posiciones(terminales, routers, concentradores,
-                    routersWPANSolucion, routersGPRSSolucion,
-                    concentradoresSolucion):
-    
+def crea_posiciones(terminales=None, routers=None, concentradores=None,
+                    routersWPANSolucion=None, routersGPRSSolucion=None,
+                    concentradoresSolucion=None):
     
     posiciones = {}
     
-    for terminal in terminales:
-        nombreTerminal = terminal[0]
-        posX = terminal[1]
-        posY = terminal[2]
-        posiciones[nombreTerminal] = [posX, posY]
-    
-    # Solo añadimos los routers que formen parte de la solución.
-    for router in routers:
-        nombreRouter = str(router[0])
-        if (nombreRouter+"_WPAN") in (routersWPANSolucion):
-            posX = router[1]
-            posY = router[2]
-            posiciones[nombreRouter+"W"] = [posX, posY]
-        if (nombreRouter+"_GPRS") in routersGPRSSolucion:
-            posX = router[1]
-            posY = router[2]
-            posiciones[nombreRouter+"G"] = [posX, posY]
-    
-    # Solo añadimos los concentradores que formen parte de la solución
-    for concentrador in concentradores:
-        nombreConcentrador = str(concentrador[0])
-        if nombreConcentrador in concentradoresSolucion:
-            posX = concentrador[1]
-            posY = concentrador[2]
-            posiciones[nombreConcentrador] = [posX, posY]
+    # Procesar terminales
+    if terminales is not None:
+        for terminal in terminales:
+            nombreTerminal = terminal[0]
+            posX, posY = terminal[1], terminal[2]
+            posiciones[nombreTerminal] = [posX, posY]
+
+    # Procesar routers si se proporcionan
+    if routers is not None:
+        if routersWPANSolucion is not None:
+            for router in routers:
+                nombreRouter = str(router[0])
+                if (nombreRouter+"_WPAN") in routersWPANSolucion:
+                    posX, posY = router[1], router[2]
+                    posiciones[nombreRouter+"W"] = [posX, posY]
+
+        if routersGPRSSolucion is not None:
+            for router in routers:
+                nombreRouter = str(router[0])
+                if (nombreRouter+"_GPRS") in routersGPRSSolucion:
+                    posX, posY = router[1], router[2]
+                    posiciones[nombreRouter+"G"] = [posX, posY]
+
+    # Procesar concentradores si se proporcionan
+    if concentradores is not None and concentradoresSolucion is not None:
+        for concentrador in concentradores:
+            nombreConcentrador = str(concentrador[0])
+            if nombreConcentrador in concentradoresSolucion:
+                posX, posY = concentrador[1], concentrador[2]
+                posiciones[nombreConcentrador] = [posX, posY]
             
     return posiciones
 
@@ -222,18 +226,14 @@ def crear_tabla_con_enlaces(x_D1D2_Solucion):
     
     # Modificamos la lista para incluir enlaces en el nombre del terminal
     lista_con_enlaces = []
-    for terminal, router, valor in lista_tabla:
+    for D1, D2, valor in lista_tabla:
         # Asumiendo que las imágenes están en una carpeta llamada 'imagenes'
-        enlace = f'<a href="terminales/{terminal}_en_rango.jpg">{terminal}</a>'
-        lista_con_enlaces.append([enlace, router, valor])
+        enlace = f'<a href="graficosSolucion/{D1}_en_rango.jpg">{D1}</a>'
+        lista_con_enlaces.append([enlace, D1, valor])
 
     # Creamos la tabla con formato HTML
     tabla_html = tabulate(lista_con_enlaces, headers=["Terminal", "Router", "Valor"], tablefmt="html")
     return tabla_html
 
 
-def generar_fila_html(terminal, router, valor):
-    return f"<tr><td><a href='imagenes/{terminal}.jpg'>{terminal}</a></td><td>{router}</td><td>{valor}</td></tr>"
 
-filas_html = [generar_fila_html(k[0], k[1], v) for k, v in w_TerminalesRWPAN_Solucion.items()]
-tabla_html = "<table>" + "".join(filas_html) + "</table>"

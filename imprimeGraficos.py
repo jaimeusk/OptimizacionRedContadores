@@ -8,6 +8,7 @@ Created on Sun Dec 17 17:25:08 2023
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import networkx as nx
+import re
 
 
 #%% Funciones para la creación de gráficos
@@ -133,7 +134,8 @@ def pintar_nodo_rango(nodo, distanciaMax):
     
 #%% Pintamos routers en rango de un terminal de ejemplo para ver candidatos
 def pintar_dispositivos_en_rango(numFigura, indiceDispositivo, conn_c_D1_D2,
-                                 distanciaMax = 0, devolver_figura=False):
+                                 distanciaMax = 0, devolver_figura=False,
+                                 dispositivoDestino=None):
     """
     Esta función visualiza en un gráfico los dispositivos que están en el rango 
     de conexión de un dispositivo de referencia específico en la red.
@@ -149,6 +151,10 @@ def pintar_dispositivos_en_rango(numFigura, indiceDispositivo, conn_c_D1_D2,
         - devolver_figura (bool, opcional): Si es True, la función devuelve la 
                                             figura creada en lugar de mostrarla 
                                             directamente. Por defecto es False.
+        - nodoDestino (str, opcional): Identificador del nodo destino para dibujar 
+                                   una línea desde el dispositivo de referencia.
+                                   Si es None, no se dibuja la línea.
+                                   Por defecto es None.
 
     Proceso:
         1.  Inicialización del gráfico con el número de figura proporcionado.
@@ -208,7 +214,6 @@ def pintar_dispositivos_en_rango(numFigura, indiceDispositivo, conn_c_D1_D2,
             
             D_ref_patch = mpatches.Patch(color='red', label=tipoDisp)
             
-            
         
         elif nombreDispositivo.startswith('T'):
             tipoDisp = "Terminal"
@@ -216,6 +221,15 @@ def pintar_dispositivos_en_rango(numFigura, indiceDispositivo, conn_c_D1_D2,
             D_compatibles_patch = mpatches.Patch(color='blue', 
                                                  label='Routers (Candidatos)')
             D_ref_patch = mpatches.Patch(color='red', label=tipoDisp)
+            
+            
+        if dispositivoDestino:
+            for dispositivo in dispositivosCompatibles:
+                if dispositivo[0] == dispositivoDestino:
+                    plt.plot([dispositivoReferencia[1], dispositivo[1]], 
+                             [dispositivoReferencia[2], dispositivo[2]], 
+                             color='red', linestyle='--', linewidth=2)
+                    break 
             
     
         # Pintamos gráfica con dispositivos
@@ -325,7 +339,7 @@ def dibujar_conexiones(conexiones, tipo, posiciones, color, estilo):
                 dispositivo1 = dispositivo1 + 'W'
                 dispositivo2 = dispositivo2 + 'G'
             
-            
+        
             x1, y1 = posiciones[dispositivo1][0], posiciones[dispositivo1][1]
             x2, y2 = posiciones[dispositivo2][0], posiciones[dispositivo2][1]
             
@@ -337,11 +351,11 @@ def dibujar_conexiones(conexiones, tipo, posiciones, color, estilo):
 
 
 def crea_grafico_conexiones_1(numFigura, posiciones,
-                              w_TerminalesRWPAN_Solucion,
-                              v_TerminalesRGPRS_Solucion, 
-                              u_RWPANConcentradores_Solucion,
-                              r_RWPAN_RWPAN_Solucion,
-                              s_RWPAN_RGPRS_Solucion):
+                              w_TerminalesRWPAN_Solucion=None,
+                              v_TerminalesRGPRS_Solucion=None, 
+                              u_RWPANConcentradores_Solucion=None,
+                              r_RWPAN_RWPAN_Solucion=None,
+                              s_RWPAN_RGPRS_Solucion=None):
     """
     Esta función se encarga de crear y configurar un gráfico visual que representa
     las conexiones entre diferentes tipos de nodos en una red.
@@ -377,39 +391,69 @@ def crea_grafico_conexiones_1(numFigura, posiciones,
     
     
     # Dibujar los nodos y las conexiones
-    dibujar_nodos_con_texto(posiciones)    
-    dibujar_conexiones(w_TerminalesRWPAN_Solucion, 'W', posiciones, 
-                       'red', 'dashed')    
-    dibujar_conexiones(v_TerminalesRGPRS_Solucion, 'V', posiciones, 
-                       'green', 'dashed')    
-    dibujar_conexiones(u_RWPANConcentradores_Solucion, 'U', posiciones, 
+    dibujar_nodos_con_texto(posiciones)
+    if w_TerminalesRWPAN_Solucion is not None:    
+        dibujar_conexiones(w_TerminalesRWPAN_Solucion, 'W', posiciones, 
+                       'red', 'dashed')
+        routers_WPAN_patch = mpatches.Patch(color='plum', label='Routers WPAN')
+        terminal_patch = mpatches.Patch(color='salmon', label='Terminal')
+        
+    if v_TerminalesRGPRS_Solucion is not None:  
+        dibujar_conexiones(v_TerminalesRGPRS_Solucion, 'V', posiciones, 
+                       'green', 'dashed')
+        routers_GPRS_patch = mpatches.Patch(color='LightGreen', label='Routers GPRS')
+        terminal_patch = mpatches.Patch(color='salmon', label='Terminal')
+        
+    if u_RWPANConcentradores_Solucion is not None:  
+        dibujar_conexiones(u_RWPANConcentradores_Solucion, 'U', posiciones, 
                        'blue', 'dashed')    
-    dibujar_conexiones(r_RWPAN_RWPAN_Solucion, 'R', posiciones, 
-                       'brown', 'dashed')    
-    dibujar_conexiones(s_RWPAN_RGPRS_Solucion, 'S', posiciones, 
+        routers_WPAN_patch = mpatches.Patch(color='plum', label='Routers WPAN')
+        concentradores_patch = mpatches.Patch(color='skyblue', label='Concentraodres')
+        
+    if r_RWPAN_RWPAN_Solucion is not None:  
+        dibujar_conexiones(r_RWPAN_RWPAN_Solucion, 'R', posiciones, 
+                       'brown', 'dashed')
+        routers_WPAN_patch = mpatches.Patch(color='plum', label='Routers WPAN')
+        
+        
+    if s_RWPAN_RGPRS_Solucion is not None:  
+        dibujar_conexiones(s_RWPAN_RGPRS_Solucion, 'S', posiciones, 
                        'orange', 'dashed')
+        routers_WPAN_patch = mpatches.Patch(color='plum', label='Routers WPAN')
+        routers_GPRS_patch = mpatches.Patch(color='LightGreen', label='Routers GPRS')
 
     
     #Creamos leyenda
-    routers_WPAN_patch = mpatches.Patch(color='plum', label='Routers WPAN')
-    routers_GPRS_patch = mpatches.Patch(color='LightGreen', label='Routers GPRS')
-    concentradores_patch = mpatches.Patch(color='skyblue', label='Concentraodres')
-    terminal_patch = mpatches.Patch(color='salmon', label='Terminal')
-    plt.legend(handles=[terminal_patch, routers_WPAN_patch, 
-                        routers_GPRS_patch, concentradores_patch])
+    handles = [] # Solo añadimos leyenda si existe
+    if 'terminal_patch' in locals():
+        handles.append(terminal_patch)
+    
+    if 'routers_WPAN_patch' in locals():
+        handles.append(routers_WPAN_patch)
+        
+    if 'routers_GPRS_patch' in locals():
+        handles.append(routers_GPRS_patch)
+        
+    if 'concentradores_patch' in locals():
+        handles.append(concentradores_patch)
+    
+    
+    plt.legend(handles = handles)
     
     
     # Configuraciones estandar del gráfico
     configurar_grafico("Grafo de conexiones 1")
     
+    return plt.gcf()
+    
 
 
 def crea_grafico_conexiones_2(numFigura, posiciones, 
-                              w_TerminalesRWPAN_Solucion,
-                              v_TerminalesRGPRS_Solucion, 
-                              u_RWPANConcentradores_Solucion,
-                              r_RWPAN_RWPAN_Solucion,
-                              s_RWPAN_RGPRS_Solucion):
+                              w_TerminalesRWPAN_Solucion=None,
+                              v_TerminalesRGPRS_Solucion=None, 
+                              u_RWPANConcentradores_Solucion=None,
+                              r_RWPAN_RWPAN_Solucion=None,
+                              s_RWPAN_RGPRS_Solucion=None):
     """
     Esta función genera un gráfico detallado de las conexiones en una red, 
     utilizando networkx y matplotlib para visualizar nodos y sus 
@@ -559,100 +603,180 @@ def crea_grafico_conexiones_2(numFigura, posiciones,
     terminal_patch = mpatches.Patch(color='salmon', label='Terminal')
     plt.legend(handles=[terminal_patch, routers_WPAN_patch, 
                         routers_GPRS_patch, concentradores_patch])
+    
+    return plt.gcf()
 
 
 
-def imprime_html(tabla_w, tabla_v, tabla_u, tabla_r, tabla_s):
+def imprime_html(tabla, titulo, enlace, html=None):
     """
-    Genera un string con contenido HTML que incluye varias tablas.
-
-    Esta función toma como entrada cinco tablas en formato HTML (como string) y 
-    las inserta en una plantilla de documento HTML. Cada tabla se presenta en 
-    una sección separada con su propio encabezado. Los estilos CSS incorporados 
-    se aplican para mejorar la presentación visual de las tablas.
+    Genera o agrega a un string con contenido HTML que incluye tablas.
 
     Parámetros:
-    - tabla_w: String con la tabla HTML de conexiones de Terminales a Routers WPAN.
-    - tabla_v: String con la tabla HTML de conexiones de Terminales a Routers GPRS.
-    - tabla_u: String con la tabla HTML de conexiones de Routers WPAN a Concentradores.
-    - tabla_r: String con la tabla HTML de conexiones entre Routers WPAN.
-    - tabla_s: String con la tabla HTML de conexiones de Routers WPAN a Routers GPRS.
+        - tabla: String con la tabla HTML a agregar.
+        - titulo: Título de la sección de la tabla.
+        - html: String con el contenido HTML acumulado. Si es None, se crea un 
+                nuevo documento HTML.
 
-    Retorna:
-    - Un string que contiene un documento HTML completo con las tablas integradas.
+   Devuelve:
+        -   Un string que contiene un documento HTML actualizado con la nueva 
+            tabla agregada.
     """
 
-    html_content = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Tablas de Conexiones</title>
-            <style>
-                body {{
-                    font-family: 'Arial', sans-serif;
-                    margin: 0;
-                    padding: 0;
-                    background-color: #f4f4f4;
-                    color: #333;
-                }}
-                .container {{
-                    width: 50%;
-                    margin: 20px auto;
-                    overflow: hidden;
-                }}
-                table {{
-                    border-collapse: collapse;
-                    margin: 20px 0;
-                    width: 100%;
-                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                }}
-                th, td {{
-                    border: 1px solid #ddd;
-                    padding: 10px;
-                    text-align: center;
-                }}
-                th {{
-                    background-color: #be0f2e;
-                    color: white;
-                }}
-                tr:nth-child(even) {{
-                    background-color: #f2f2f2;
-                }}
-                tr:hover {{
-                    background-color: #ddd;
-                }}
-                th:nth-child(3), td:nth-child(3) {{
-                    width: 1%;
-                    white-space: nowrap;
-                }}
-                th:nth-child(1), th:nth-child(2), td:nth-child(1), td:nth-child(2) {{
-                    width: 49.5%;
-                }}
-                h2 {{
-                    color: #333;
-                    text-align: center;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h2>Tabla de Conexiones - Terminales a Routers WPAN</h2>
-                {tabla_w}
-                <h2>Tabla de Conexiones - Terminales a Routers GPRS</h2>
-                {tabla_v}
-                <h2>Tabla de Conexiones - Routers WPAN a Concentradores</h2>
-                {tabla_u}
-                <h2>Tabla de Conexiones - Routers WPAN a Routers WPAN</h2>
-                {tabla_r}
-                <h2>Tabla de Conexiones - Routers WPAN a Routers GPRS</h2>
-                {tabla_s}
+
+    if html is None:
+        html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Informe interactivo</title>
+                <style>
+                    body {
+                        font-family: 'Arial', sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                        color: #333;
+                    }
+                    .container {
+                        width: 50%;
+                        margin: 20px auto;
+                        overflow: hidden;
+                    }
+                    .flex-container {
+                        display: flex;
+                        justify-content: space-around;
+                        align-items: center;
+                        flex-wrap: wrap;
+                    }
+                    .flex-container img {
+                        flex: 1;
+                        max-width: 45%;
+                        margin: 10px;
+                    }
+                    table {
+                        border-collapse: collapse;
+                        margin: 20px 0;
+                        width: 100%;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    th, td {
+                        border: 1px solid #ddd;
+                        padding: 10px;
+                        text-align: center;
+                    }
+                    th {
+                        background-color: #be0f2e;
+                        color: white;
+                    }
+                    tr:nth-child(even) {
+                        background-color: #f2f2f2;
+                    }
+                    tr:hover {
+                        background-color: #ddd;
+                    }
+                    th:nth-child(3), td:nth-child(3) {
+                        width: 1%;
+                        white-space: nowrap;
+                    }
+                    th:nth-child(1), th:nth-child(2), td:nth-child(1), td:nth-child(2) {
+                        width: 49.5%;
+                    }
+                    h1 {
+                        color: #333;
+                        text-align: center;
+                    }
+                    h2 {
+                        color: #333;
+                        text-align: center;
+                    }
+                    .instrucciones {
+                        background-color: #fff;
+                        border: 1px solid #ddd;
+                        padding: 20px;
+                        margin: 20px 0;
+                        border-radius: 5px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .instrucciones h2 {
+                        margin-top: 0;             
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Informe red de contadores</h1>
+                <div class="container">
+                    <div class="instrucciones">
+                        <h2>Instrucciones de Uso</h2>
+                        <p>Bienvenido al informe de la red de contadores. En esta página, encontrarás visualizaciones detalladas y tablas informativas sobre las conexiones y componentes de la red.</p>
+                        <ul>
+                            <li><strong>Visualizaciones de la Red:</strong> En la parte superior, verás imágenes que muestran la estructura y conexiones de la red. Haz clic en ellas si quieres verlas con detalle.</li>
+                            <li><strong>Tablas de Conexiones:</strong> Más abajo, encontrarás tablas detalladas con información específica sobre cada conexión en la red.
+                                <ul>    
+                                    <li>Si haces clic en el título de tabla. Se mostrará un esquema de las conexiones que indica cada título.</li>
+                                    <li>Si haces clic en una fila de alguna tabla. Se mostrará un resumen de las posibles conexiones disponibles para ese dispositivo, y la que finalmente se creó.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p>Explora las secciones para obtener mayor detalle de la solución propuesta.</p>
+                    <div class="flex-container">
+                        <img onclick="window.open('solucionConexiones1.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones1.png" alt="Imagen 1" style="width:100%;height:auto;">
+                        <img onclick="window.open('solucionConexiones2.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones2.png" alt="Imagen 2" style="width:100%;height:auto;">
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+     
+    # Borramos las etiquetas finales de cierre y añadimos nueva tabla
+    html = re.sub(r'</div>\s*</body>\s*</html>\s*$', '', html, 
+                  flags=re.IGNORECASE | re.DOTALL)
+    
+    html += f"""
+            <h2><a href="#" onclick="window.open('{enlace}', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')">{titulo}</a></h2>
+            {tabla}                
             </div>
         </body>
         </html>
-        """.format(tabla_w=tabla_w, tabla_v=tabla_v, 
-                    tabla_u=tabla_u, tabla_r=tabla_r, tabla_s=tabla_s)
+        """
 
-    return html_content
+    return html
+
+
+
+def generar_tabla_html(x_conexionesD1D2_Solucion, headers):
+    """
+    Genera una tabla HTML básica.
+
+    Argumentos:
+        datos: Lista de listas que representan los datos de la tabla.
+        headers: Lista de encabezados de columna para la tabla.
+
+    Devuelve:
+        Una cadena de texto que representa una tabla HTML.
+    """
+    
+    lista_tabla = [[k[0], k[1], v] for k, v in x_conexionesD1D2_Solucion.items()]
+    
+    # Crear la fila de encabezados
+    encabezados_html = "".join([f"<th>{header}</th>" for header in headers])
+    filas_html = [f"<tr>{encabezados_html}</tr>"]
+
+    # Crear las filas de datos
+    for fila in lista_tabla:
+        enlace = f"graficosSolucion/{fila[0]}_en_rango.png"  # Construir el enlace
+        fila_con_enlace = (f"<tr onclick=\"window.open('{enlace}','newWindow',"+
+            "'width=750,height=600,left=100,top=100,menubar=no,toolbar=no," +
+            "location=no,status=no')\">")
+        celdas_html = "".join([f"<td>{celda}</td>" for celda in fila])
+        fila_con_enlace += celdas_html
+        fila_con_enlace += "</tr>"
+        filas_html.append(fila_con_enlace)
+
+    # Combinar todo en una tabla HTML
+    tabla_html = f"<table>{''.join(filas_html)}</table>"
+
+    return tabla_html
 
 
 

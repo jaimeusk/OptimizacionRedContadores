@@ -14,13 +14,15 @@ import matplotlib.pyplot as plt
 from tabulate import tabulate
 import time
 import os
+import re
+import webbrowser
 
 from imprimeGraficos import (pintar_dispositivos, 
                              pintar_dispositivos_en_rango,
                              crea_grafico_conexiones_1,
                              crea_grafico_conexiones_2,
                              imprime_html,
-                             generar_fila_html)
+                             generar_tabla_html)
 
 
 from utilidades import (dispositivos_en_rango_lista, 
@@ -51,7 +53,7 @@ concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
 
 
 # Leemos menos datos para validar el modelo con menor coste computacional
-terminales = leerDatos('Terminales',1, 3, 4, 10, 1)
+terminales = leerDatos('Terminales',1, 3, 4, 9, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
 
@@ -439,6 +441,115 @@ if status == pywraplp.Solver.OPTIMAL:
     
     
     
+    # Creamos los dos gráficos.
+    posiciones = crea_posiciones(terminales, routers, concentradores,
+                        routersWPANSolucion, routersGPRSSolucion,
+                        concentradoresSolucion)
+        
+    
+    # Creamos las carpetas en las que guardar las posibles soluciones graficas
+    if not os.path.exists("graficosSolucion"):
+        os.makedirs("graficosSolucion")
+    
+    # Generamos todos los gráficos de todas las conexiones posibles de terminales
+    # Generamos los gráficos de los routers que aparecen en la solución
+    for (To, RWd), valor in w_TerminalesRWPAN_Solucion.items():
+        numDisp = re.findall(r'\d+', To)
+        numDisp = int(''.join(numDisp))
+        figura = pintar_dispositivos_en_rango(100+numDisp, numDisp-1, 
+                                    conn_c_term_rout, distMaxRout,
+                                    devolver_figura=True, 
+                                    dispositivoDestino=RWd)
+        nombre_archivo = "graficosSolucion/"+To+"_en_rango.png"
+        figura.savefig(nombre_archivo)
+        
+    for (To, RGd), valor in v_TerminalesRGPRS_Solucion.items():
+        numDisp = re.findall(r'\d+', To)
+        numDisp = int(''.join(numDisp))
+        figura = pintar_dispositivos_en_rango(300+numDisp, numDisp-1, 
+                                    conn_c_term_rout, distMaxRout,
+                                    devolver_figura=True, 
+                                    dispositivoDestino=RGd)
+        nombre_archivo = "graficosSolucion/"+To+"_en_rango.png"
+        figura.savefig(nombre_archivo)
+    
+    # Generamos los gráficos de los routers que aparecen en la solución
+    for (RWo, RWd), valor in r_RWPAN_RWPAN_Solucion.items():
+        numDisp = re.findall(r'\d+', RWo)
+        numDisp = int(''.join(numDisp))
+        figura = pintar_dispositivos_en_rango(500+numDisp, numDisp, 
+                                    conn_c_rout_rout, distMaxRout,
+                                    devolver_figura=True, 
+                                    dispositivoDestino=RWd)
+        nombre_archivo = "graficosSolucion/"+RWo+"_en_rango.png"
+        figura.savefig(nombre_archivo)
+        
+    for (RWo, RGd), valor in s_RWPAN_RGPRS_Solucion.items():
+        numDisp = re.findall(r'\d+', RWo)
+        numDisp = int(''.join(numDisp))
+        figura = pintar_dispositivos_en_rango(700+numDisp, numDisp, 
+                                    conn_c_rout_rout, distMaxRout,
+                                    devolver_figura=True,
+                                    dispositivoDestino=RWd)
+        nombre_archivo = "graficosSolucion/"+RGd+"_en_rango.png"
+        figura.savefig(nombre_archivo)
+        
+    for (RWo, Cd), valor in u_RWPANConcentradores_Solucion.items():
+        numDisp = re.findall(r'\d+', RWo)
+        numDisp = int(''.join(numDisp))
+        figura = pintar_dispositivos_en_rango(900+numDisp, numDisp, 
+                                    conn_c_rout_conc, distMaxConc,
+                                    devolver_figura=True,
+                                    dispositivoDestino=Cd)
+        nombre_archivo = "graficosSolucion/"+RWo+"_en_rango.png"
+        figura.savefig(nombre_archivo)
+
+    
+    
+    # Generamos los gráficos de los concentradores que aparecen en la solución
+    
+    G1 = crea_grafico_conexiones_1(5, posiciones,
+                                  w_TerminalesRWPAN_Solucion,
+                                  v_TerminalesRGPRS_Solucion, 
+                                  u_RWPANConcentradores_Solucion,
+                                  r_RWPAN_RWPAN_Solucion,
+                                  s_RWPAN_RGPRS_Solucion)
+    
+    G2 = crea_grafico_conexiones_2(6, posiciones, 
+                                  w_TerminalesRWPAN_Solucion,
+                                  v_TerminalesRGPRS_Solucion, 
+                                  u_RWPANConcentradores_Solucion,
+                                  r_RWPAN_RWPAN_Solucion,
+                                  s_RWPAN_RGPRS_Solucion)
+    
+    posicionesTermWPAN = crea_posiciones(terminales = terminales,
+                                         routers= routers,
+                                         routersWPANSolucion = routersWPANSolucion)
+    
+    posicionesTermGPRS = crea_posiciones(terminales = terminales,
+                                         routers= routers,
+                                         routersGPRSSolucion = routersGPRSSolucion)
+    
+    
+    
+    GTermWPAN = crea_grafico_conexiones_1(7, posicionesTermWPAN, 
+                                  w_TerminalesRWPAN_Solucion)
+    GTermFPRS = crea_grafico_conexiones_1(8, posicionesTermGPRS, 
+                                  v_TerminalesRGPRS_Solucion)
+    '''
+    GWPANConc = crea_grafico_conexiones_1(9, posicionesWpanConc, 
+                                  u_RWPANConcentradores_Solucion)
+    GWPANWPAN = crea_grafico_conexiones_1(10, posicionesWpanWpan, 
+                                  r_RWPAN_RWPAN_Solucion)
+    GWPANGPRS = crea_grafico_conexiones_1(11, posicionesWpanGPRS, 
+                                  s_RWPAN_RGPRS_Solucion)
+    '''
+    
+    G1.savefig("solucionConexiones1.png")
+    G2.savefig("solucionConexiones2.png")
+    GTermWPAN.savefig("solucionConexiones3.png")
+    GTermFPRS.savefig("solucionConexiones4.png")
+    
     # Datos para la tabla de conexiones por tipo
     conexiones_tipo = [
         ["Term-RWPAN", len(w_TerminalesRWPAN_Solucion)],
@@ -457,93 +568,44 @@ if status == pywraplp.Solver.OPTIMAL:
     ]
 
     # Imprimiendo las tablas
-    print(tabulate(conexiones_tipo, headers=["Conexión", "Ud"], 
-                   tablefmt="pretty"))
-    print()
-    print(tabulate(dispositivos_tipo, headers=["Dispositivo", "Ud."], 
-                   tablefmt="pretty"))
-     
-        
-    # Creamos listas de datos con las conexiones para los dispositivos para 
-    # imprimirlas/guardarlas en un fichero.
-    lista_tabla_w = [[k[0], k[1], v] for k, v in w_TerminalesRWPAN_Solucion.items()]
-    lista_tabla_v = [[k[0], k[1], v] for k, v in v_TerminalesRGPRS_Solucion.items()]
-    lista_tabla_u = [[k[0], k[1], v] for k, v in u_RWPANConcentradores_Solucion.items()]
-    lista_tabla_r = [[k[0], k[1], v] for k, v in r_RWPAN_RWPAN_Solucion.items()]
-    lista_tabla_s = [[k[0], k[1], v] for k, v in s_RWPAN_RGPRS_Solucion.items()]
+    
+    tablaConexiones = tabulate(conexiones_tipo, headers=["Conexión", "Ud"], 
+                   tablefmt="html")
+    tablaDispositivos = tabulate(dispositivos_tipo, headers=["Dispositivo", "Ud."], 
+                   tablefmt="html")
+    
+    
+    # Generamos informe en HTML con todos los gráficos de la solución
 
-    lista_tabla_w = [
-        [f'<a href="terminales/{k[0]}_en_rango.jpg">{k[0]}</a>', k[1], v] 
-        for k, v in w_TerminalesRWPAN_Solucion.items()
-    ]
-
-    # Crear las tablas
-    tabla_w = tabulate(lista_tabla_w, headers=["Terminal", "R - WPAN", "Valor"], tablefmt="html")
-    tabla_v = tabulate(lista_tabla_v, headers=["Terminal", "R - GPRS", "Valor"], tablefmt="html")
-    tabla_u = tabulate(lista_tabla_u, headers=["R - WPAN", "Concent.", "Valor"], tablefmt="html")
-    tabla_r = tabulate(lista_tabla_r, headers=["R - WPAN", "R - WPAN", "Valor"], tablefmt="html")
-    tabla_s = tabulate(lista_tabla_s, headers=["R - WPAN", "R - GPRS", "Valor"], tablefmt="html")
+    html_tabla_w = generar_tabla_html(w_TerminalesRWPAN_Solucion, 
+                                      ["Terminal", "R - WPAN", "Valor"])
+    html_tabla_v = generar_tabla_html(v_TerminalesRGPRS_Solucion, 
+                                      ["Terminal", "R - GPRS", "Valor"])
+    html_tabla_u = generar_tabla_html(u_RWPANConcentradores_Solucion, 
+                                      ["R - WPAN", "Concent,", "Valor"])
+    html_tabla_r = generar_tabla_html(r_RWPAN_RWPAN_Solucion, 
+                                      ["R - WPAN", "R - WPAN", "Valor"])
+    html_tabla_s = generar_tabla_html(s_RWPAN_RGPRS_Solucion, 
+                                      ["R - WPAN", "R - GPRS", "Valor"])
     
-    
-    
-    tablas_html = imprime_html(tabla_w,tabla_v,tabla_u, tabla_r, tabla_s)
+    html_final = imprime_html(html_tabla_w, "Terminales a routers WPAN","solucionConexiones3.png")
+    html_final = imprime_html(html_tabla_v, "Terminales a routers GPRS", "solucionConexiones4.png", html_final)
+    html_final = imprime_html(html_tabla_r, "Routers WPAN routers WPAN","",html_final)
+    html_final = imprime_html(html_tabla_s, "Routers WPAN routers GPRS","",html_final)
+    html_final = imprime_html(html_tabla_u, "Routers WPAN a Concentradores","",html_final)
+    html_final = imprime_html(tablaConexiones, "Resumen conexiones","", html_final)
+    html_final = imprime_html(tablaDispositivos, "Resumen dispositivos","", html_final)
     
     # Escribe el contenido HTML en un archivo
-    with open('tablas_conexiones.html', 'w') as file:
-        file.write(tablas_html)
-    
-    if not os.path.exists("terminales"):
-        os.makedirs("terminales")
-        
-    if not os.path.exists("routers"):
-        os.makedirs("routers")
-        
-    if not os.path.exists("concentradores"):
-        os.makedirs("concentradores")
-    
-    # Generamos todos los gráficos de todas las conexiones posibles de terminales
-    for i, valor in enumerate(conn_c_term_rout):
-        figura = pintar_dispositivos_en_rango(100+i, i, conn_c_term_rout,devolver_figura=True)
-        nombre_archivo = "terminales/T"+str((i+1))+"_en_rango.png"
-        figura.savefig(nombre_archivo)
-    
-    # Escribir las tablas en un archivo
-    with open("solucion_conexiones.txt", "w") as archivo:
-        archivo.write("Conexiones Terminales-Routers WPAN:\n" + tabla_w + "\n\n")
-        archivo.write("Conexiones Terminales-Routers GPRS:\n" + tabla_v + "\n\n")
-        archivo.write("Conexiones Routers WPAN-Concentradores:\n" + tabla_u + "\n\n")
-        archivo.write("Conexiones Router WPAN a Router WPAN:\n" + tabla_r + "\n\n")
-        archivo.write("Conexiones Router WPAN a Router GPRS:\n" + tabla_s)
-    
-    # Creamos los dos gráficos.
-    posiciones = crea_posiciones(terminales, routers, concentradores,
-                        routersWPANSolucion, routersGPRSSolucion,
-                        concentradoresSolucion)
-        
-    
-    # Generamos los gráficos de los routers que aparecen en la solución
-    
-    
-    
-    # Generamos los gráficos de los concentradores que aparecen en la solución
-    
-    crea_grafico_conexiones_1(5, posiciones,
-                                  w_TerminalesRWPAN_Solucion,
-                                  v_TerminalesRGPRS_Solucion, 
-                                  u_RWPANConcentradores_Solucion,
-                                  r_RWPAN_RWPAN_Solucion,
-                                  s_RWPAN_RGPRS_Solucion)
-    
-    crea_grafico_conexiones_2(6, posiciones, 
-                                  w_TerminalesRWPAN_Solucion,
-                                  v_TerminalesRGPRS_Solucion, 
-                                  u_RWPANConcentradores_Solucion,
-                                  r_RWPAN_RWPAN_Solucion,
-                                  s_RWPAN_RGPRS_Solucion)
-
+    with open('informe.html', 'w') as file:
+        file.write(html_final)
 
     costeFinal = Z.solution_value()
     print("El coste final de la infraestructura es: " + str(costeFinal))
+    
+    directorio = str(os.getcwd())
+    url = directorio + '/informe.html'
+    webbrowser.open(url)
     
 else:
     print("El estado de la solución no es óptimo, es = " + str(status))

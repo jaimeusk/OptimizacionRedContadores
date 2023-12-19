@@ -63,11 +63,35 @@
                         color: #333;
                         text-align: center;
                     }
+                    .instrucciones {
+                        background-color: #fff;
+                        border: 1px solid #ddd;
+                        padding: 20px;
+                        margin: 20px 0;
+                        border-radius: 5px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .instrucciones h2 {
+                        margin-top: 0;             
+                    }
                 </style>
             </head>
             <body>
                 <h1>Informe red de contadores</h1>
                 <div class="container">
+                    <div class="instrucciones">
+                        <h2>Instrucciones de Uso</h2>
+                        <p>Bienvenido al informe de la red de contadores. En esta página, encontrarás visualizaciones detalladas y tablas informativas sobre las conexiones y componentes de la red.</p>
+                        <ul>
+                            <li><strong>Visualizaciones de la Red:</strong> En la parte superior, verás imágenes que muestran la estructura y conexiones de la red. Haz clic en ellas si quieres verlas con detalle.</li>
+                            <li><strong>Tablas de Conexiones:</strong> Más abajo, encontrarás tablas detalladas con información específica sobre cada conexión en la red.
+                                <ul>    
+                                    <li>Si haces clic en el título de tabla. Se mostrará un esquema de las conexiones que indica cada título.</li>
+                                    <li>Si haces clic en una fila de alguna tabla. Se mostrará un resumen de las posibles conexiones disponibles para ese dispositivo, y la que finalmente se creó.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p>Explora las secciones para obtener mayor detalle de la solución propuesta.</p>
                     <div class="flex-container">
                         <img onclick="window.open('solucionConexiones1.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones1.png" alt="Imagen 1" style="width:100%;height:auto;">
                         <img onclick="window.open('solucionConexiones2.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones2.png" alt="Imagen 2" style="width:100%;height:auto;">
@@ -87,6 +111,33 @@
             
             <h2><a href="#" onclick="window.open('', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')">Routers WPAN a Concentradores</a></h2>
             <table><tr><th>R - WPAN</th><th>Concent,</th><th>Valor</th></tr><tr onclick="window.open('graficosSolucion/R1_en_rango.png','newWindow','width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')"><td>R1</td><td>C1</td><td>1.0</td></tr></table>                
+            
+            <h2><a href="#" onclick="window.open('', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')">Resumen conexiones</a></h2>
+            <table>
+<thead>
+<tr><th>Conexión   </th><th style="text-align: right;">  Ud</th></tr>
+</thead>
+<tbody>
+<tr><td>Term-RWPAN </td><td style="text-align: right;">   7</td></tr>
+<tr><td>Term-RGPRS </td><td style="text-align: right;">   0</td></tr>
+<tr><td>RWPAN-Conc.</td><td style="text-align: right;">   1</td></tr>
+<tr><td>RWPAN-RWPAN</td><td style="text-align: right;">   1</td></tr>
+<tr><td>RWPAN-RGPRS</td><td style="text-align: right;">   0</td></tr>
+</tbody>
+</table>                
+            
+            <h2><a href="#" onclick="window.open('', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')">Resumen dispositivos</a></h2>
+            <table>
+<thead>
+<tr><th>Dispositivo  </th><th style="text-align: right;">  Ud.</th></tr>
+</thead>
+<tbody>
+<tr><td>Nº Term.     </td><td style="text-align: right;">    7</td></tr>
+<tr><td>Nº RWPAN     </td><td style="text-align: right;">    2</td></tr>
+<tr><td>Nº RGPRS     </td><td style="text-align: right;">    0</td></tr>
+<tr><td>Nº Conc.     </td><td style="text-align: right;">    1</td></tr>
+</tbody>
+</table>                
             </div>
         </body>
         </html>
