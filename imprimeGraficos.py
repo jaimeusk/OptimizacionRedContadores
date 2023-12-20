@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import networkx as nx
 import re
-
+import os
 
 #%% Funciones para la creación de gráficos
 
@@ -252,9 +252,12 @@ def pintar_dispositivos_en_rango(numFigura, indiceDispositivo, conn_c_D1_D2,
                        "conectarse con " + str(nombreDispositivo))
     
     if devolver_figura:
-        return plt.gcf()
+        figura = plt.gcf()
+        plt.close()  # Cerrar el gráfico actual
+        return figura
     else:
         plt.show()
+        plt.close()
 
     
     
@@ -338,7 +341,6 @@ def dibujar_conexiones(conexiones, tipo, posiciones, color, estilo):
             elif tipo == 'S':
                 dispositivo1 = dispositivo1 + 'W'
                 dispositivo2 = dispositivo2 + 'G'
-            
         
             x1, y1 = posiciones[dispositivo1][0], posiciones[dispositivo1][1]
             x2, y2 = posiciones[dispositivo2][0], posiciones[dispositivo2][1]
@@ -444,7 +446,10 @@ def crea_grafico_conexiones_1(numFigura, posiciones,
     # Configuraciones estandar del gráfico
     configurar_grafico("Grafo de conexiones 1")
     
-    return plt.gcf()
+    figura = plt.gcf()
+    plt.close()  # Cerrar el gráfico actual
+    return figura
+
     
 
 
@@ -493,7 +498,9 @@ def crea_grafico_conexiones_2(numFigura, posiciones,
     #%% Dibujamos los nodos con networkx y matplotlib 
     
     # Crear un grafo
-    G = nx.Graph()
+    G = nx.Graph()           
+    
+    
     
     # Agregar nodos al grafo con atributos
     for nodo in posiciones.keys():
@@ -604,12 +611,15 @@ def crea_grafico_conexiones_2(numFigura, posiciones,
     plt.legend(handles=[terminal_patch, routers_WPAN_patch, 
                         routers_GPRS_patch, concentradores_patch])
     
-    return plt.gcf()
+    figura = plt.gcf()
+    plt.close()  # Cerrar el gráfico actual
+    return figura
 
 
 
 def imprime_html(tabla, titulo, enlace, 
-                 tabla2=None, titulo2=None, enlace2=None, html=None):
+                 tabla2=None, titulo2=None, enlace2=None, html=None, 
+                 solucionOptima = None):
     """
     Genera o agrega a un string con contenido HTML que incluye tablas.
 
@@ -626,94 +636,94 @@ def imprime_html(tabla, titulo, enlace,
 
 
     if html is None:
-        html = """
+        html = f"""
             <!DOCTYPE html>
             <html>
             <head>
                 <title>Informe interactivo</title>
                 <style>
-                    body {
+                    body {{
                         font-family: 'Arial', sans-serif;
                         margin: 0;
                         padding: 0;
                         background-color: #f4f4f4;
                         color: #333;
-                    }
-                    .container {
+                    }}
+                    .container {{
                         width: 50%;
                         margin: 20px auto;
                         overflow: hidden;
-                    }
-                    .flex-container {
+                    }}
+                    .flex-container {{
                         display: flex;
                         justify-content: space-around;
                         align-items: center;
                         flex-wrap: wrap;
-                    }
-                    .flex-container img {
+                    }}
+                    .flex-container img {{
                         flex: 1;
                         max-width: 45%;
                         margin: 10px;
-                    }
-                    table {
+                    }}
+                    table {{
                         border-collapse: collapse;
                         margin: 20px 0;
                         width: 100%;
                         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                    }
-                    th, td {
+                    }}
+                    th, td {{
                         border: 1px solid #ddd;
                         padding: 10px;
                         text-align: center;
-                    }
-                    th {
+                    }}
+                    th {{
                         background-color: #be0f2e;
                         color: white;
-                    }
-                    tr:nth-child(even) {
+                    }}
+                    tr:nth-child(even) {{
                         background-color: #f2f2f2;
-                    }
-                    tr:hover {
+                    }}
+                    tr:hover {{
                         background-color: #ddd;
-                    }
-                    th:nth-child(3), td:nth-child(3) {
+                    }}
+                    th:nth-child(3), td:nth-child(3) {{
                         width: 1%;
                         white-space: nowrap;
-                    }
-                    th:nth-child(1), th:nth-child(2), td:nth-child(1), td:nth-child(2) {
+                    }}
+                    th:nth-child(1), th:nth-child(2), td:nth-child(1), td:nth-child(2) {{
                         width: 49.5%;
-                    }
-                    h1 {
+                    }}
+                    h1 {{
                         color: #333;
                         text-align: center;
-                    }
-                    h2 {
+                    }}
+                    h2 {{
                         color: #333;
                         text-align: center;
-                    }
-                    .instrucciones {
+                    }}
+                    .instrucciones {{
                         background-color: #fff;
                         border: 1px solid #ddd;
                         padding: 20px;
                         margin: 20px 0;
                         border-radius: 5px;
                         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                    }
-                    .instrucciones h2 {
+                    }}
+                    .instrucciones h2 {{
                         margin-top: 0;             
-                    }
-                    .flex-container-tablas {
+                    }}
+                    .flex-container-tablas {{
                         display: flex;
                         justify-content: space-around;
                         align-items: flex-start;
                         flex-wrap: wrap;
-                    }
+                    }}
                     
-                    .tabla-container {
+                    .tabla-container {{
                         flex: 1;
                         max-width: 95%;
                         margin: 10px;
-                    }
+                    }}
                 </style>
             </head>
             <body>
@@ -732,12 +742,14 @@ def imprime_html(tabla, titulo, enlace,
                             </li>
                         </ul>
                         <p>Explora las secciones para obtener mayor detalle de la solución propuesta.</p>
+                    
+                    <h2>Solución óptima. Coste total infraestructura = {solucionOptima}</h2>
                     <div class="flex-container">
                         <img onclick="window.open('solucionConexiones1.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones1.png" alt="Imagen 1" style="width:100%;height:auto;">
                         <img onclick="window.open('solucionConexiones2.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones2.png" alt="Imagen 2" style="width:100%;height:auto;">
                     </div>
                 </div>
-            </body>
+                </body>
             </html>
             """
      
@@ -747,7 +759,7 @@ def imprime_html(tabla, titulo, enlace,
     
     html += "<div class='flex-container-tablas'>"
     
-    html += f"<div class='tabla-container'><h2><a href='#' onclick=\"window.open('{enlace}', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')\">{titulo}</a></h2>{tabla}</div>"
+    html += f"<div class='tabla-container'><h2><a href='javascript:;' onclick=\"window.open('{enlace}', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')\">{titulo}</a></h2>{tabla}</div>"
 
     
     if tabla2:
@@ -793,6 +805,46 @@ def generar_tabla_html(x_conexionesD1D2_Solucion, headers):
     tabla_html = f"<table>{''.join(filas_html)}</table>"
 
     return tabla_html
+
+
+
+
+def genera_graficos_conexiones(x_conexionesD1D2_Solucion, 
+                               conn_c_D1_D2, distMax = 0):
+    """
+    Genera y guarda gráficos basados en un diccionario de conexiones.
+
+    Parámetros:
+        x_conexionesD1D2_Solucion (dict): Diccionario con las conexiones a dibujar.
+        conn_c_D1_D2 (list): Datos de conexión necesarios para la función de pintar.
+        distMax: Distancia máxima para las conexiones.
+        prefijo_numFigura: Prefijo numérico para identificar las figuras.
+        directorio_salida: Directorio donde se guardarán los gráficos.
+    """
+    
+    directorio_salida = "graficosSolucion"
+    
+    if not os.path.exists(directorio_salida):
+        os.makedirs(directorio_salida)   
+
+
+    # Iterar a través del diccionario de conexiones
+    for (origen, destino), valor in x_conexionesD1D2_Solucion.items():
+        # Extraer el número del dispositivo de origen
+        numDisp = re.findall(r'\d+', origen)
+        numDisp = int(''.join(numDisp))
+        if distMax == 0:
+            numDisp = numDisp-1
+        # Generar la figura
+        figura = pintar_dispositivos_en_rango(numDisp, numDisp, 
+                               conn_c_D1_D2, distMax, 
+                               devolver_figura=True, 
+                               dispositivoDestino=destino)
+
+        # Guardar la figura en el directorio especificado
+        nombre_archivo = os.path.join(directorio_salida, f"{origen}_en_rango.png")
+        figura.savefig(nombre_archivo)
+        plt.close(figura)  # Cerrar la figura para liberar memoria
 
 
 
