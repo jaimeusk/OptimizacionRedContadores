@@ -26,6 +26,7 @@ def crea_grafico(figura):
     plt.figure(figsize=(10, 8),dpi=150)
     
     
+    
 
     
 def configurar_grafico(titulo="",tight_layout = 1):
@@ -72,7 +73,8 @@ def pintar_plano(dispositivos, color, tipo, marcador='o'):
  
 
        
-def pintar_dispositivos(numFigura, concentradores, routers, terminales):
+def pintar_dispositivos(numFigura,titulo, concentradores=None, 
+                                            routers=None, terminales=None):
     '''
     Pinta grafica con todos los dispositivos en un plano.
     
@@ -87,6 +89,39 @@ def pintar_dispositivos(numFigura, concentradores, routers, terminales):
     '''
     
     crea_grafico(numFigura)
+    
+    handles = []
+    if concentradores is not None:
+        pintar_plano(concentradores, 'blue', 'Concentradores', marcador='o')
+        concentrador_patch = mpatches.Patch(color='blue', label='Concentradores')
+        handles.append(concentrador_patch)
+    
+    if routers is not None:
+        pintar_plano(routers, 'green', 'Routers', marcador='s')
+        router_patch = mpatches.Patch(color='green', label='Routers')
+        handles.append(router_patch)
+    
+    if terminales is not None:
+        pintar_plano(terminales, 'red', 'Terminales', marcador='*')
+        terminal_patch = mpatches.Patch(color='red', label='Terminales')
+        handles.append(terminal_patch)
+    
+    # Crear una leyenda para el gráfico
+
+        
+    
+    
+    plt.legend(handles=handles)
+    
+    configurar_grafico(titulo)
+    plt.close(numFigura)
+    
+    figura = plt.gcf()
+    plt.close()  # Cerrar el gráfico actual
+    return figura
+    
+    '''
+    crea_grafico(numFigura)
     pintar_plano(concentradores, 'blue', 'Concentradores', marcador='o')
     pintar_plano(routers, 'green', 'Routers',marcador='s')
     pintar_plano(terminales, 'red', 'Terminales',marcador='*')
@@ -97,11 +132,13 @@ def pintar_dispositivos(numFigura, concentradores, routers, terminales):
     router_patch = mpatches.Patch(color='blue', label='Routers (Candidatos)')
     terminal_patch = mpatches.Patch(color='red', label='Terminales')
     plt.legend(handles=[concentrador_patch, router_patch, terminal_patch])
-
-
+    
     # Configuraciones del gráfico
     configurar_grafico("Terminales y ubicaciones candidatas de routers " +
                        "y concentradores")
+    '''
+
+    
     
     
     
@@ -724,6 +761,12 @@ def imprime_html(tabla, titulo, enlace,
                         max-width: 95%;
                         margin: 10px;
                     }}
+                    .zoomable-image {{
+                        transition: transform 0.3s ease;
+                    }}
+                    .zoomable-image:hover {{
+                        transform: scale(1.2); 
+                    }}
                 </style>
             </head>
             <body>
@@ -734,10 +777,10 @@ def imprime_html(tabla, titulo, enlace,
                         <p>Bienvenido al informe de la red de contadores. En esta página, encontrarás visualizaciones detalladas y tablas informativas sobre las conexiones y componentes de la red.</p>
                         <ul>
                             <li><strong>Visualizaciones de la Red:</strong> En la parte superior, verás imágenes que muestran la estructura y conexiones de la red. Haz clic en ellas si quieres verlas con detalle.</li>
-                            <li><strong>Tablas de Conexiones:</strong> Más abajo, encontrarás tablas detalladas con información específica sobre cada conexión en la red.
+                            <li><strong>Tablas de Conexiones:</strong> Más abajo, encontrarás tablas detalladas con información específica sobre cada tipo de conexión y dispositivo en la red.
                                 <ul>    
-                                    <li>Si haces clic en el título de tabla. Se mostrará un esquema de las conexiones que indica cada título.</li>
-                                    <li>Si haces clic en una fila de alguna tabla. Se mostrará un resumen de las posibles conexiones disponibles para ese dispositivo, y la que finalmente se creó.</li>
+                                    <li>Si haces clic en el título de tabla. Se mostrará un esquema de las conexiones o dispositivos que indica cada título.</li>
+                                    <li>Si haces clic en una fila de alguna tabla. Se mostrará un resumen de las posibles conexiones disponibles para ese dispositivo, y la que finalmente se creó. En el caso de los dispositivos, si haces clic sobre su fila, podrás ver en detalle la ubicació</li>
                                 </ul>
                             </li>
                         </ul>
@@ -745,8 +788,8 @@ def imprime_html(tabla, titulo, enlace,
                     
                     <h2>Solución óptima. Coste total infraestructura = {solucionOptima}</h2>
                     <div class="flex-container">
-                        <img onclick="window.open('solucionConexiones1.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones1.png" alt="Imagen 1" style="width:100%;height:auto;">
-                        <img onclick="window.open('solucionConexiones2.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="solucionConexiones2.png" alt="Imagen 2" style="width:100%;height:auto;">
+                        <img class="zoomable-image" onclick="window.open('graficosSolucion/solucionConexiones1.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="graficosSolucion/solucionConexiones1.png" alt="Imagen 1" style="width:100%;height:auto;cursor:pointer;" title="Solución. Haz clic para ampliar imagen">
+                        <img class="zoomable-image" onclick="window.open('graficosSolucion/solucionConexiones2.png', 'newWindow', 'width=750,height=600,left=100,top=100,menubar=no,toolbar=no,location=no,status=no')" src="graficosSolucion/solucionConexiones2.png" alt="Imagen 2" style="width:100%;height:auto;cursor:pointer;" title="Solución. (Presentación alternativa) Haz clic para ampliar imagen">
                     </div>
                 </div>
                 </body>
@@ -793,7 +836,7 @@ def generar_tabla_html(x_conexionesD1D2_Solucion, headers):
     # Crear las filas de datos
     for fila in lista_tabla:
         enlace = f"graficosSolucion/{fila[0]}_en_rango.png"  # Construir el enlace
-        fila_con_enlace = (f"<tr onclick=\"window.open('{enlace}','newWindow',"+
+        fila_con_enlace = (f"<tr title='Haz clic para ampliar detalle' style='cursor:pointer;' onclick=\"window.open('{enlace}','newWindow',"+
             "'width=750,height=600,left=100,top=100,menubar=no,toolbar=no," +
             "location=no,status=no')\">")
         celdas_html = "".join([f"<td>{celda}</td>" for celda in fila])
@@ -845,6 +888,41 @@ def genera_graficos_conexiones(x_conexionesD1D2_Solucion,
         nombre_archivo = os.path.join(directorio_salida, f"{origen}_en_rango.png")
         figura.savefig(nombre_archivo)
         plt.close(figura)  # Cerrar la figura para liberar memoria
+        
+        
+
+def generar_tabla_html2(datos_tipo, headers):
+    """
+    Genera una tabla HTML básica con enlaces en cada fila.
+
+    Argumentos:
+        datos_tipo: Lista de listas que representan los datos de la tabla. 
+                    Cada sublista contiene el texto de la celda y un enlace.
+        headers: Lista de encabezados de columna para la tabla.
+
+    Devuelve:
+        Una cadena de texto que representa una tabla HTML.
+    """
+
+    # Crear la fila de encabezados
+    encabezados_html = "".join([f"<th>{header}</th>" for header in headers])
+    filas_html = [f"<tr>{encabezados_html}</tr>"]
+
+    # Crear las filas de datos
+    for fila in datos_tipo:
+        enlace = fila[-1]  # El enlace está en la última columna
+        fila_con_enlace = (f"<tr title='Haz clic para ampliar detalle' style='cursor:pointer;' onclick=\"window.open('{enlace}','newWindow',"+
+            "'width=750,height=600,left=100,top=100,menubar=no,toolbar=no," +
+            "location=no,status=no')\">")
+        celdas_html = "".join([f"<td>{celda}</td>" for celda in fila[:-1]])  # Excluyendo el enlace
+        fila_con_enlace += celdas_html
+        fila_con_enlace += "</tr>"
+        filas_html.append(fila_con_enlace)
+
+    # Combinar todo en una tabla HTML
+    tabla_html = f"<table>{''.join(filas_html)}</table>"
+
+    return tabla_html
 
 
 

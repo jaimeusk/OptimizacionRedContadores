@@ -11,21 +11,21 @@ Caso Final. Refactorizado
 
 from ortools.linear_solver import pywraplp
 import matplotlib.pyplot as plt
-from tabulate import tabulate
-import time
-import os
-import re
-import webbrowser
+import time #Se usa para medir el tiempo de ejecución
+import os   #Se usa para crear la carpeta en la que almacenar las soluciones
+import webbrowser #Se usa para abrir al final de la ejecución el informe html
 
-from imprimeGraficos import (pintar_dispositivos, 
-                             pintar_dispositivos_en_rango,
+# Librerías gráficas para crear plots e informe html
+from imprimeGraficos import (pintar_dispositivos,                             
                              crea_grafico_conexiones_1,
                              crea_grafico_conexiones_2,
                              imprime_html,
                              generar_tabla_html,
+                             generar_tabla_html2,
                              genera_graficos_conexiones)
 
 
+# Librerías con utilidades para el manejo de los datos
 from utilidades import (dispositivos_en_rango_lista, 
                         leerDatos, 
                         obtener_nodos_activos, 
@@ -54,9 +54,10 @@ concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
 
 
 # Leemos menos datos para validar el modelo con menor coste computacional
-terminales = leerDatos('Terminales',1, 3, 4, 9, 1)
+terminales = leerDatos('Terminales',1, 3, 4, 13, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
+
 
 
 
@@ -356,9 +357,6 @@ for router in routerNombres:
     solver.Add(suma_WPAN + suma_GPRS + suma_Conc  == r_WPAN[router]) 
     
 
-# Forzamos que no haya routers GPRS para ver los reenvíos    
-for router in routerNombres:
-    solver.Add(r_GPRS[router] == 0)
     
 
 
@@ -485,15 +483,10 @@ if status == pywraplp.Solver.OPTIMAL:
     posicionesWpanWpan = crea_posiciones(routers= routers,
                                          routersWPANSolucion = routersWPANSolucion)
                                          
-    '''w_TerminalesRWPAN_Solucion=None,
-    v_TerminalesRGPRS_Solucion=None, 
-    u_RWPANConcentradores_Solucion=None,
-    r_RWPAN_RWPAN_Solucion=None,
-    s_RWPAN_RGPRS_Solucion=None'''
     
     GTermWPAN = crea_grafico_conexiones_1(7, posicionesTermWPAN, 
                         w_TerminalesRWPAN_Solucion=w_TerminalesRWPAN_Solucion)
-    GTermFPRS = crea_grafico_conexiones_1(8, posicionesTermGPRS, 
+    GTermGPRS = crea_grafico_conexiones_1(8, posicionesTermGPRS, 
                         v_TerminalesRGPRS_Solucion=v_TerminalesRGPRS_Solucion)
     
     GWPANConc = crea_grafico_conexiones_1(9, posicionesWpanConc, 
@@ -503,38 +496,69 @@ if status == pywraplp.Solver.OPTIMAL:
     GWPANGPRS = crea_grafico_conexiones_1(11, posicionesWpanGPRS, 
                 s_RWPAN_RGPRS_Solucion=s_RWPAN_RGPRS_Solucion)
     
-    G1.savefig("solucionConexiones1.png")
-    G2.savefig("solucionConexiones2.png")
     
-    GTermWPAN.savefig("solucionConexiones3.png")
-    GTermFPRS.savefig("solucionConexiones4.png")
-    GWPANConc.savefig("solucionConexiones5.png")    
-    GWPANWPAN.savefig("solucionConexiones6.png")
-    GWPANGPRS.savefig("solucionConexiones7.png")
+    
+    # Para crear una gráfica por cada tipo de dispositivo, hacemos lo siguiente:
+    # eliminar el sufijo "_GPRS"
+    routersSinGPRS = [router.replace('_GPRS', '') for router in routersGPRSSolucion]
+    routersSinWPAN = [router.replace('_GPRS', '') for router in routersWPANSolucion]
+    
+    routersGPRSPintar = [router for router in routers if router[0] in routersSinGPRS]
+    routersWPANPintar = [router for router in routers if router[0] in routersSinGPRS]
+    concentradoresPintar = [concentrador for concentrador in concentrador if concentrador[0] in concentradoresSolucion]
+    
+    
+    GDispCompletos = pintar_dispositivos(1,
+    "Posiciones terminales y posiciones candidatas de routers y concentradores", 
+    concentradores, routers, terminales)
+    GDispCompletos.savefig("graficosSolucion/posicionesTotales.png")
+    
+    GDispRoutersGPRS = pintar_dispositivos(2,"Posiciones routers GPRS solución", routers = routersGPRSPintar)
+    GDispRoutersGPRS.savefig("graficosSolucion/solucionGPRS.png")
+    
+    GDispRoutersWPAN = pintar_dispositivos(2,"Posiciones routers WPAN solución", routers = routersWPANPintar)
+    GDispRoutersWPAN.savefig("graficosSolucion/solucionWPAN.png")
+    
+    GDispConcentradores = pintar_dispositivos(2,"Posiciones concentradores solución", concentradores = concentradoresPintar)
+    GDispConcentradores.savefig("graficosSolucion/solucionConcentradores.png")
+    
+    GDispTerminales = pintar_dispositivos(2,"Posiciones terminales", terminales = terminales)
+    GDispTerminales.savefig("graficosSolucion/solucionTerminales.png")
+    
+    
+    
+    
+    G1.savefig("graficosSolucion/solucionConexiones1.png")
+    G2.savefig("graficosSolucion/solucionConexiones2.png")
+    
+    GTermWPAN.savefig("graficosSolucion/solucionConexiones3.png")
+    GTermGPRS.savefig("graficosSolucion/solucionConexiones4.png")
+    GWPANConc.savefig("graficosSolucion/solucionConexiones5.png")    
+    GWPANWPAN.savefig("graficosSolucion/solucionConexiones6.png")
+    GWPANGPRS.savefig("graficosSolucion/solucionConexiones7.png")
+    
     
     # Datos para la tabla de conexiones por tipo
     conexiones_tipo = [
-        ["Term-RWPAN", len(w_TerminalesRWPAN_Solucion)],
-        ["Term-RGPRS", len(v_TerminalesRGPRS_Solucion)],
-        ["RWPAN-Conc.", len(u_RWPANConcentradores_Solucion)],
-        ["RWPAN-RWPAN", len(r_RWPAN_RWPAN_Solucion)],
-        ["RWPAN-RGPRS", len(s_RWPAN_RGPRS_Solucion)]
+        ["Term-RWPAN", len(w_TerminalesRWPAN_Solucion),"graficosSolucion/solucionConexiones3.png"],
+        ["Term-RGPRS", len(v_TerminalesRGPRS_Solucion),"graficosSolucion/solucionConexiones4.png"],
+        ["RWPAN-Conc.", len(u_RWPANConcentradores_Solucion),"graficosSolucion/solucionConexiones5.png"],
+        ["RWPAN-RWPAN", len(r_RWPAN_RWPAN_Solucion),"graficosSolucion/solucionConexiones6.png"],
+        ["RWPAN-RGPRS", len(s_RWPAN_RGPRS_Solucion),"graficosSolucion/solucionConexiones7.png"]
     ]
 
-    # Datos para la tabla de número de dispositivos por tipo
+    # Datos para la tabla de número de dispositivos por tipo [Nu]
     dispositivos_tipo = [
-        ["Nº Term.", len(terminales)],
-        ["Nº RWPAN", len(routersWPANSolucion)],
-        ["Nº RGPRS", len(routersGPRSSolucion)],
-        ["Nº Conc.", len(concentradoresSolucion)]
+        ["Nº Term.", len(terminales),"graficosSolucion/solucionTerminales.png"],
+        ["Nº RWPAN", len(routersWPANSolucion),"graficosSolucion/solucionWPAN.png"],
+        ["Nº RGPRS", len(routersGPRSSolucion),"graficosSolucion/solucionGPRS.png"],
+        ["Nº Conc.", len(concentradoresSolucion),"graficosSolucion/solucionConcentradores.png"]
     ]
 
     # Imprimiendo las tablas
     
-    tablaConexiones = tabulate(conexiones_tipo, headers=["Conexión", "Ud"], 
-                   tablefmt="html")
-    tablaDispositivos = tabulate(dispositivos_tipo, headers=["Dispositivo", "Ud."], 
-                   tablefmt="html")
+    tablaConexiones = generar_tabla_html2(conexiones_tipo, ["Conexiones", "Ud."])
+    tablaDispositivos = generar_tabla_html2(dispositivos_tipo, ["Dispositivo", "Ud."])
     
     
     # Generamos informe en HTML con todos los gráficos de la solución
@@ -553,25 +577,27 @@ if status == pywraplp.Solver.OPTIMAL:
     
     
     # Generamos código HTML
-    html_final = imprime_html(tablaConexiones, "Resumen conexiones","",
+    html_final = imprime_html(tablaConexiones, "Resumen conexiones","graficosSolucion/solucionConexiones1.png",
                               tabla2=tablaDispositivos, 
-                              titulo2="Resumen dispositivos",enlace2="",
+                              titulo2="Resumen dispositivos",enlace2="graficosSolucion/posicionesTotales.png",
                               solucionOptima= costeFinal, html=None)
     html_final = imprime_html(html_tabla_w, 
-                    "Terminales a routers WPAN","solucionConexiones3.png",
+                    "Terminales a routers WPAN","graficosSolucion/solucionConexiones3.png",
                     html=html_final)
     html_final = imprime_html(html_tabla_v, 
-                    "Terminales a routers GPRS", "solucionConexiones4.png",
+                    "Terminales a routers GPRS", "graficosSolucion/solucionConexiones4.png",
                     html=html_final)
     html_final = imprime_html(html_tabla_r, 
-                    "Routers WPAN routers WPAN","solucionConexiones6.png",
+                    "Routers WPAN routers WPAN","graficosSolucion/solucionConexiones6.png",
                     html=html_final)
     html_final = imprime_html(html_tabla_s, 
-                    "Routers WPAN routers GPRS","solucionConexiones7.png",
+                    "Routers WPAN routers GPRS","graficosSolucion/solucionConexiones7.png",
                     html=html_final)
     html_final = imprime_html(html_tabla_u, 
-                    "Routers WPAN a Concentradores","solucionConexiones5.png",
+                    "Routers WPAN a Concentradores","graficosSolucion/solucionConexiones5.png",
                     html=html_final)
+    
+    
     
     
     # Escribe el contenido HTML en un archivo
