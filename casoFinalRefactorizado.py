@@ -44,20 +44,18 @@ plt.ioff() # Evitamos que los gráficos se muestren por defecto
 
 #%% Leemos los datos provenientes de la hoja excel
 
-'''
 #Leemos todos los datos
 terminales = leerDatos('Terminales',1, 2, 4, 161, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,281,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
+
+
 '''
-
-
-
 # Leemos menos datos para validar el modelo con menor coste computacional
 terminales = leerDatos('Terminales',1, 3, 4, 13, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
-
+'''
 
 
 
@@ -65,7 +63,6 @@ distMaxTerm = leerDatos('Distancias_Máximas',2,2,4,2,1)[0]
 distMaxRout = leerDatos('Distancias_Máximas',2,3,2,3,1)[0][0]
 distMaxConc = leerDatos('Distancias_Máximas',2,4,2,4,1)[0][0]
 
-distMaxConc = distMaxConc
 
 
 capacidadMaxWPAN = leerDatos('Capacidad_y_Coste',2,2,2,2,1)[0][0]
@@ -506,6 +503,11 @@ if status == pywraplp.Solver.OPTIMAL:
     routersGPRSPintar = [router for router in routers if router[0] in routersSinGPRS]
     routersWPANPintar = [router for router in routers if router[0] in routersSinGPRS]
     concentradoresPintar = [concentrador for concentrador in concentrador if concentrador[0] in concentradoresSolucion]
+    
+    # Garantizamos antes de guardar las imágenes, la existencia del directorio
+    directorio_salida = "graficosSolucion"
+    if not os.path.exists(directorio_salida):
+        os.makedirs(directorio_salida)  
     
     
     GDispCompletos = pintar_dispositivos(1,
