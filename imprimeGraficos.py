@@ -876,8 +876,9 @@ def genera_graficos_conexiones(x_conexionesD1D2_Solucion,
         # Extraer el número del dispositivo de origen
         numDisp = re.findall(r'\d+', origen)
         numDisp = int(''.join(numDisp))
+        
         if distMax == 0:
-            numDisp = numDisp-1
+            numDisp = numDisp
         # Generar la figura
         figura = pintar_dispositivos_en_rango(numDisp, numDisp, 
                                conn_c_D1_D2, distMax, 

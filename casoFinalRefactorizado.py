@@ -44,6 +44,7 @@ plt.ioff() # Evitamos que los gráficos se muestren por defecto
 
 #%% Leemos los datos provenientes de la hoja excel
 
+
 #Leemos todos los datos
 terminales = leerDatos('Terminales',1, 2, 4, 161, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,281,1)
@@ -52,8 +53,8 @@ concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
 
 '''
 # Leemos menos datos para validar el modelo con menor coste computacional
-terminales = leerDatos('Terminales',1, 3, 4, 13, 1)
-routers = leerDatos('Ubic_Cand_Routers',1,2,3,20,1)
+terminales = leerDatos('Terminales',1, 2, 4, 70, 1)
+routers = leerDatos('Ubic_Cand_Routers',1,2,3,15,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
 '''
 
@@ -97,6 +98,7 @@ conn_c_rout_conc = dispositivos_en_rango_lista(routers, concentradores,
 
 
 #%% Definimos el modelo
+#solver = pywraplp.Solver('Example', pywraplp.Solver.GUROBI_MIXED_INTEGER_PROGRAMMING)
 solver = pywraplp.Solver.CreateSolver('SCIP')
     
 
