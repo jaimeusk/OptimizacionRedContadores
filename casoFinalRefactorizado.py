@@ -51,12 +51,14 @@ routers = leerDatos('Ubic_Cand_Routers',1,2,3,281,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,25,1)
 
 
+
 '''
 # Leemos menos datos para validar el modelo con menor coste computacional
 terminales = leerDatos('Terminales',1, 2, 4, 70, 1)
 routers = leerDatos('Ubic_Cand_Routers',1,2,3,15,1)
 concentradores = leerDatos('Ubic_Cand_Concentr',1,2,3,10,1)
 '''
+
 
 
 
@@ -605,13 +607,13 @@ if status == pywraplp.Solver.OPTIMAL:
     
     
     # Escribe el contenido HTML en un archivo
-    with open('informe.html', 'w') as file:
+    with open('index.html', 'w') as file:
         file.write(html_final)
 
     
     
     directorio = str(os.getcwd())
-    url = directorio + '/informe.html'
+    url = directorio + '/index.html'
     webbrowser.open(url)
     
 else:
