@@ -1,6 +1,9 @@
 # Optimización de Redes de Telegestión
 
 Este proyecto se centra en la optimización de una red de telegestión de contadores de agua, haciendo uso de métodos de programación lineal para encontrar la solución óptima en término de costes de compra de los dispositivos. Se hace uso de OR-Tools para la resolución del problemas.
+
+Puedes acceder al informe HTML generado en el siguiente enlace: [https://jaimeusk.github.io/OptimizacionRedContadores/](https://jaimeusk.github.io/OptimizacionRedContadores/)
+
 ## Estructura del Proyecto
 
 El código se divide en tres ficheros principales:
